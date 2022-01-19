@@ -1,0 +1,3 @@
+phone: [contact_information, us_phone]
+address: [contact_information, address]
+email: [contact_information, email]

@@ -792,6 +792,18 @@ RSpec.describe FormProfile, type: :model do
     }
   end
 
+  let(:v21_22a_expected) do
+    {
+      'application' => {
+        'claimant' => {
+          'address' => address,
+          'email' => user.pciu_email,
+          'phoneNumber' => us_phone
+        }
+      }
+    }
+  end
+
   describe '#pciu_us_phone' do
     def self.test_pciu_us_phone(primary, expected)
       it "returns #{expected}" do
@@ -1109,6 +1121,7 @@ RSpec.describe FormProfile, type: :model do
           686C-674
           28-8832
           28-1900
+          21-22a
         ].each do |form_id|
           it "returns prefilled #{form_id}" do
             expect_prefilled(form_id)
