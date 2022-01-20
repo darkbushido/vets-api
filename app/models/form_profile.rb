@@ -103,7 +103,7 @@ class FormProfile
     mdot: ['MDOT'],
     fsr: ['5655'],
     vre_counseling: ['28-8832'],
-    vre_readiness: ['28-1900'], 
+    vre_readiness: ['28-1900'],
     appoint_rep: ['21-22a']
   }.freeze
 
@@ -133,7 +133,7 @@ class FormProfile
     '5655' => ::FormProfiles::VA5655,
     '28-8832' => ::FormProfiles::VA288832,
     '28-1900' => ::FormProfiles::VA281900,
-    '22-1990EZ' => ::FormProfiles::VA1990ez, 
+    '22-1990EZ' => ::FormProfiles::VA1990ez,
     '21-22a' => ::FormProfiles::VA2122a
   }.freeze
 
