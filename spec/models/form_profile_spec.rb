@@ -6,7 +6,7 @@ require 'decision_review/schemas'
 RSpec.describe FormProfile, type: :model do
   include SchemaMatchers
 
-  let!(:user) { build(:user, :loa3) }
+  let(:user) { build(:user, :loa3) }
   let(:mvi_profile) { build(:mvi_profile, suffix: 'Jr.') }
 
   before do
@@ -1213,7 +1213,7 @@ RSpec.describe FormProfile, type: :model do
       end
     end
 
-    context 'with a higher level review form' do
+    context 'with a higher level review form' do # rubocop:disable MultipleMemoizedHelpers
       let(:schema_name) { '20-0996' }
       let(:schema) { VetsJsonSchema::SCHEMAS[schema_name] }
       let(:form_profile) { described_class.for(form_id: schema_name, user: user) }
@@ -1259,7 +1259,7 @@ RSpec.describe FormProfile, type: :model do
       end
     end
 
-    context 'with a notice of disagreement (NOD) form' do
+    context 'with a notice of disagreement (NOD) form' do # rubocop:disable MultipleMemoizedHelpers
       let(:schema_name) { '10182' }
       let(:schema) do
         DecisionReview::Schemas::NOD_CREATE_REQUEST.merge '$schema': 'http://json-schema.org/draft-04/schema#'
