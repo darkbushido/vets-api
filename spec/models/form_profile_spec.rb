@@ -1213,7 +1213,8 @@ RSpec.describe FormProfile, type: :model do
       end
     end
 
-    context 'with a higher level review form' do # rubocop:disable MultipleMemoizedHelpers
+    # rubocop:disable RSpec/MultipleMemoizedHelpers
+    context 'with a higher level review form' do
       let(:schema_name) { '20-0996' }
       let(:schema) { VetsJsonSchema::SCHEMAS[schema_name] }
       let(:form_profile) { described_class.for(form_id: schema_name, user: user) }
@@ -1259,7 +1260,7 @@ RSpec.describe FormProfile, type: :model do
       end
     end
 
-    context 'with a notice of disagreement (NOD) form' do # rubocop:disable MultipleMemoizedHelpers
+    context 'with a notice of disagreement (NOD) form' do
       let(:schema_name) { '10182' }
       let(:schema) do
         DecisionReview::Schemas::NOD_CREATE_REQUEST.merge '$schema': 'http://json-schema.org/draft-04/schema#'
@@ -1314,6 +1315,7 @@ RSpec.describe FormProfile, type: :model do
         expect(errors.empty?).to eq(true), "schema errors: #{errors}"
       end
     end
+    # rubocop:enable RSpec/MultipleMemoizedHelpers
 
     context 'with a pension application form' do
       it 'returns the va profile mapped to the pension form' do
