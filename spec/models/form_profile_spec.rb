@@ -6,7 +6,7 @@ require 'decision_review/schemas'
 RSpec.describe FormProfile, type: :model do
   include SchemaMatchers
 
-  let(:user) { build(:user, :loa3) }
+  let!(:user) { build(:user, :loa3) }
   let(:mvi_profile) { build(:mvi_profile, suffix: 'Jr.') }
 
   before do
