@@ -104,7 +104,7 @@ class FormProfile
     fsr: ['5655'],
     vre_counseling: ['28-8832'],
     vre_readiness: ['28-1900'],
-    appoint_rep: ['21-22a']
+    appoint_rep: ['21-22A']
   }.freeze
 
   FORM_ID_TO_CLASS = {
