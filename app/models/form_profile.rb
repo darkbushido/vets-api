@@ -134,7 +134,7 @@ class FormProfile
     '28-8832' => ::FormProfiles::VA288832,
     '28-1900' => ::FormProfiles::VA281900,
     '22-1990EZ' => ::FormProfiles::VA1990ez,
-    '21-22a' => ::FormProfiles::VA2122a
+    '21-22A' => ::FormProfiles::VA2122a
   }.freeze
 
   APT_REGEX = /\S\s+((apt|apartment|unit|ste|suite).+)/i.freeze
