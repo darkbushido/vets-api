@@ -783,7 +783,6 @@ RSpec.describe FormProfile, type: :model do
       'email' => user.pciu_email,
       'phone' => us_phone
     }
-
   end
 
   describe '#pciu_us_phone' do
@@ -1028,6 +1027,7 @@ RSpec.describe FormProfile, type: :model do
         end
       end
 
+
       context 'with emis prefill for 10203' do
         before do
           stub_methods_for_emis_data
@@ -1102,7 +1102,7 @@ RSpec.describe FormProfile, type: :model do
           686C-674
           28-8832
           28-1900
-          21-22a
+          21-22A
         ].each do |form_id|
           it "returns prefilled #{form_id}" do
             expect_prefilled(form_id)
