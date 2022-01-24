@@ -67,21 +67,6 @@ RSpec.describe FormProfile, type: :model do
     }
   end
 
-  let(:v40_10007_expected) do
-    {
-      'application' => {
-        'claimant' => {
-          'address' => address,
-          'dateOfBirth' => user.birth_date,
-          'name' => full_name,
-          'ssn' => FormIdentityInformation.new(ssn: user.ssn).hyphenated_ssn,
-          'email' => user.pciu_email,
-          'phoneNumber' => us_phone
-        }
-      }
-    }
-  end
-
   let(:v0873_expected) do
     {
       'fullName' => full_name,
@@ -1114,7 +1099,6 @@ RSpec.describe FormProfile, type: :model do
           22-1995
           22-5490
           22-5495
-          40-10007
           1010ez
           22-0993
           FEEDBACK-TOOL
