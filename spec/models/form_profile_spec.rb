@@ -779,14 +779,11 @@ RSpec.describe FormProfile, type: :model do
 
   let(:v21_22a_expected) do
     {
-      'application' => {
-        'claimant' => {
-          'address' => address,
-          'email' => user.pciu_email,
-          'phoneNumber' => us_phone
-        }
-      }
+      'address' => address,
+      'email' => user.pciu_email,
+      'phone' => us_phone
     }
+
   end
 
   describe '#pciu_us_phone' do
