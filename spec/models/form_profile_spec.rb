@@ -1027,7 +1027,6 @@ RSpec.describe FormProfile, type: :model do
         end
       end
 
-
       context 'with emis prefill for 10203' do
         before do
           stub_methods_for_emis_data
