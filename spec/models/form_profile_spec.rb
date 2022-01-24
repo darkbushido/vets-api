@@ -1101,7 +1101,7 @@ RSpec.describe FormProfile, type: :model do
           686C-674
           28-8832
           28-1900
-          21-22A
+          21-22a
         ].each do |form_id|
           it "returns prefilled #{form_id}" do
             expect_prefilled(form_id)
