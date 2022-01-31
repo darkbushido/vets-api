@@ -315,10 +315,6 @@ features:
     actor_type: cookie_id
     description: Enables/disables the Login.gov button for MyVAHealth (VSP Identity)
     enable_in_development: true
-  login_old_design:
-    actor_type: cookie_id
-    description: Enables/disables the new Sign in design (VSP Identity)
-    enable_in_development: true
   loop_pages:
     actor_type: user
     description: Enable new list loop pattern
@@ -368,6 +364,10 @@ features:
   profile_show_address_change_modal:
     actor_type: user
     description: Shows a modal that allows addresses to be duplicated from home to mailing and vice versa
+    enable_in_development: true
+  profile_show_fax_number:
+    actor_type: user
+    description: Show/hide the fax number UI on the profile page
     enable_in_development: true
   profile_show_receive_text_notifications:
     actor_type: user

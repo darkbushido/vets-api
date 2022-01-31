@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require 'prawn'
-require 'prawn/table'
 require 'lighthouse/veterans_health/client'
 require 'sidekiq/form526_job_status_tracker/job_tracker'
 require 'sidekiq/form526_job_status_tracker/metrics'
@@ -10,6 +8,16 @@ module FastTrack
   class DisabilityCompensationJob
     include Sidekiq::Worker
     include Sidekiq::Form526JobStatusTracker::JobTracker
+
+    ERROR_REPORT_EMAILS = [
+      'natasha.ibrahim@gsa.gov',
+      'emily.theis@gsa.gov',
+      'julia.l.allen@gsa.gov',
+      'tadhg.ohiggins@gsa.gov',
+      'mattgardner@navapbc.com',
+      'yangyang@navapbc.com',
+      'yoom@navapbc.com'
+    ].freeze
 
     extend SentryLogging
     # NOTE: This is apparently at most about 4.5 hours.
@@ -64,7 +72,7 @@ module FastTrack
              "The error was: #{error_message}. The backtrace was: #{backtrace}"
       ActionMailer::Base.mail(
         from: ApplicationMailer.default[:from],
-        to: 'natasha.ibrahim@gsa.gov, emily.theis@gsa.gov, julia.l.allen@gsa.gov, tadhg.ohiggins@gsa.gov',
+        to: ERROR_REPORT_EMAILS.join(', '),
         subject: 'Fast Track Hypertension Errored',
         body: body
       ).deliver_now
