@@ -381,6 +381,15 @@ Rails.application.routes.draw do
     resources :higher_level_reviews, only: %i[create show]
   end
 
+  namespace :v2, defaults: { format: 'json' } do
+    resource :sessions, only: [] do
+      get ':type/new',
+          to: 'sessions#new',
+          constraints: ->(request) { V2::SessionsController::REDIRECT_URLS.include?(request.path_parameters[:type]) }
+      get :callback, to: 'sessions#callback'
+    end
+  end
+
   root 'v0/example#index', module: 'v0'
 
   scope '/internal' do
