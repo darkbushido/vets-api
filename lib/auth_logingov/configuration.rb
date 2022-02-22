@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'common/client/configuration/rest'
+require 'common/client/middleware/logging'
 
 module AuthLogingov
   # Configuration for the AuthLogingov::Service. A singleton class that returns

@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require 'login/after_login_actions'
 require 'auth_logingov/service'
 
 module V2
@@ -16,7 +15,8 @@ module V2
 
     def callback
       token = logingov_auth_service.token(params[:code])
-      puts token
+      user_info = logingov_auth_service.user_info(token)
+      user_login(user_info)
       # userInfo = AuthenticateService.new.userInfoFromToken(token)
       # user_login(userInfo)
     end
@@ -28,7 +28,7 @@ module V2
     end
 
     def logingov_auth_service
-      AuthLogingov::Service.new
+      @logingov_auth_service ||= AuthLogingov::Service.new
     end
 
     def authenticate
@@ -37,11 +37,7 @@ module V2
       reset_session
     end
 
-    def user_login(saml_response)
-
-    end
-
-    def user_logout(saml_response)
+    def user_login(user_info)
 
     end
   end
