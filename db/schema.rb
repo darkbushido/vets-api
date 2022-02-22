@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2022_02_08_161919) do
+ActiveRecord::Schema.define(version: 2022_02_17_223248) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "btree_gin"
@@ -488,6 +488,43 @@ ActiveRecord::Schema.define(version: 2022_02_08_161919) do
     t.uuid "claim_guid", null: false
     t.index ["carma_case_id"], name: "index_form1010cg_submissions_on_carma_case_id", unique: true
     t.index ["claim_guid"], name: "index_form1010cg_submissions_on_claim_guid", unique: true
+  end
+
+  create_table "form1095_b_beneficiaries", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "form1095_b_id", null: false
+    t.string "first_name"
+    t.string "last_name"
+    t.string "middle_name"
+    t.string "ssn"
+    t.date "birth_date"
+    t.boolean "coverage_months", null: false, array: true
+    t.boolean "isCorrected", default: false
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.index ["form1095_b_id"], name: "index_form1095_b_beneficiaries_on_form1095_b_id"
+  end
+
+  create_table "form1095_bs", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "veteran_icn", null: false
+    t.string "first_name", null: false
+    t.string "middle_name"
+    t.string "last_name", null: false
+    t.date "birth_date"
+    t.string "ssn"
+    t.string "address", null: false
+    t.string "city"
+    t.string "state"
+    t.string "country"
+    t.string "zip_code"
+    t.string "province"
+    t.string "foreign_zip"
+    t.boolean "coverage_months", null: false, array: true
+    t.integer "tax_year", null: false
+    t.datetime "last_modified", null: false
+    t.boolean "isCorrected", default: false
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.index ["veteran_icn"], name: "index_form1095_bs_on_veteran_icn"
   end
 
   create_table "form526_job_statuses", id: :serial, force: :cascade do |t|
