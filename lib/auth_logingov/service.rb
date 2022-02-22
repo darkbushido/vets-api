@@ -25,10 +25,10 @@ module AuthLogingov
                         params:
                         {
                           acr_values: IAL::LOGIN_GOV_IAL2,
-                          client_id: Settings.logingov.client_id,
+                          client_id: config.client_id,
                           nonce: SecureRandom.hex,
                           prompt: PROMPT,
-                          redirect_uri: Settings.logingov.redirect_uri,
+                          redirect_uri: config.redirect_uri,
                           response_type: RESPONSE_TYPE,
                           scope: SCOPE,
                           state: state
@@ -46,14 +46,21 @@ module AuthLogingov
       raise e
     end
 
+    def user_info(token)
+      response = perform(:get, 'api/openid_connect/userinfo', nil, { 'Authorization' => "Bearer #{token}" })
+      response.body
+    rescue Common::Client::Errors::ClientError => e
+      raise e
+    end
+
     private
 
     def auth_url
-      "#{Settings.logingov.oauth_url}/#{AUTH_PATH}"
+      "#{config.base_path}/#{AUTH_PATH}"
     end
 
     def token_url
-      "#{Settings.logingov.oauth_url}/#{TOKEN_PATH}"
+      "#{config.base_path}/#{TOKEN_PATH}"
     end
 
     def token_params(code)
@@ -67,8 +74,8 @@ module AuthLogingov
 
     def client_assertion_jwt
       jwt_payload = {
-        iss: Settings.logingov.client_id,
-        sub: Settings.logingov.client_id,
+        iss: config.client_id,
+        sub: config.client_id,
         aud: token_url,
         jti: SecureRandom.hex,
         nonce: nonce,
@@ -78,7 +85,7 @@ module AuthLogingov
     end
 
     def private_key
-      OpenSSL::PKey::RSA.new(File.open(Settings.logingov.client_key_path))
+      OpenSSL::PKey::RSA.new(File.open(config.client_key_path))
     end
 
     def state

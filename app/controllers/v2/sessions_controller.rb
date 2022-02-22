@@ -14,11 +14,9 @@ module V2
     end
 
     def callback
-      token = logingov_auth_service.token(params[:code])
-      user_info = logingov_auth_service.user_info(token)
+      response = logingov_auth_service.token(params[:code])
+      user_info = logingov_auth_service.user_info(response[:access_token])
       user_login(user_info)
-      # userInfo = AuthenticateService.new.userInfoFromToken(token)
-      # user_login(userInfo)
     end
 
     private
@@ -38,7 +36,34 @@ module V2
     end
 
     def user_login(user_info)
+      normalized_attributes = {
+        uuid: user_info[:sub],
+        loa: { current: LOA::THREE, highest: LOA::THREE },
+        ssn: user_info[:social_security_number].tr('-', ''),
+        birth_date: user_info[:birthdate],
+        first_name: user_info[:given_name],
+        last_name: user_info[:family_name],
+        email: user_info[:email],
+        sign_in: { service_name: 'logingov_direct' }
+      }
 
+      @user_identity = UserIdentity.new(normalized_attributes)
+      @current_user = User.new(uuid: @user_identity.attributes[:uuid])
+      @current_user.instance_variable_set(:@identity, @user_identity)
+      @current_user.last_signed_in = Time.current.utc
+      @session_object = Session.new(
+        uuid: @current_user.uuid
+      )
+
+      @current_user.save && @session_object.save && @user_identity.save
+      set_cookies
+      # after_login_actions
+      redirect_to "http://localhost:3001/auth/login/callback?type=logingov"
+    end
+
+    def set_cookies
+      Rails.logger.info('[SignInService]: LOGIN', sso_logging_info)
+      set_api_cookie!
     end
   end
 end
