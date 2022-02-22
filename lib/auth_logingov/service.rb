@@ -7,14 +7,7 @@ module AuthLogingov
   class Service < Common::Client::Base
     configuration AuthLogingov::Configuration
 
-    AUTH_PATH = 'openid_connect/authorize'
-    TOKEN_PATH = 'api/openid_connect/token'
-    RESPONSE_TYPE = 'code'
-    PROMPT = 'select_account'
     SCOPE = 'profile email openid social_security_number'
-    GRANT_TYPE = 'authorization_code'
-    CLIENT_ASSERTION_TYPE = 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer'
-    CLIENT_ASSERTION_EXPIRATION_SECONDS = 1000
 
     def render_auth
       renderer = ActionController::Base.renderer
@@ -27,9 +20,9 @@ module AuthLogingov
                           acr_values: IAL::LOGIN_GOV_IAL2,
                           client_id: config.client_id,
                           nonce: SecureRandom.hex,
-                          prompt: PROMPT,
+                          prompt: config.prompt,
                           redirect_uri: config.redirect_uri,
-                          response_type: RESPONSE_TYPE,
+                          response_type: config.response_type,
                           scope: SCOPE,
                           state: state
                         }
@@ -39,7 +32,7 @@ module AuthLogingov
 
     def token(code)
       response = perform(
-        :post, 'api/openid_connect/token', token_params(code), { 'Content-Type' => 'application/json' }
+        :post, config.token_path, token_params(code), { 'Content-Type' => 'application/json' }
       )
       response.body
     rescue Common::Client::Errors::ClientError => e
@@ -47,7 +40,7 @@ module AuthLogingov
     end
 
     def user_info(token)
-      response = perform(:get, 'api/openid_connect/userinfo', nil, { 'Authorization' => "Bearer #{token}" })
+      response = perform(:get, config.userinfo_path, nil, { 'Authorization' => "Bearer #{token}" })
       response.body
     rescue Common::Client::Errors::ClientError => e
       raise e
@@ -56,18 +49,18 @@ module AuthLogingov
     private
 
     def auth_url
-      "#{config.base_path}/#{AUTH_PATH}"
+      "#{config.base_path}/#{config.auth_path}"
     end
 
     def token_url
-      "#{config.base_path}/#{TOKEN_PATH}"
+      "#{config.base_path}/#{config.token_path}"
     end
 
     def token_params(code)
       {
-        grant_type: GRANT_TYPE,
+        grant_type: config.grant_type,
         code: code,
-        client_assertion_type: CLIENT_ASSERTION_TYPE,
+        client_assertion_type: config.client_assertion_type,
         client_assertion: client_assertion_jwt
       }.to_json
     end
@@ -79,13 +72,9 @@ module AuthLogingov
         aud: token_url,
         jti: SecureRandom.hex,
         nonce: nonce,
-        exp: Time.now.to_i + CLIENT_ASSERTION_EXPIRATION_SECONDS
+        exp: Time.now.to_i + config.client_assertion_expiration_seconds
       }
-      JWT.encode(jwt_payload, private_key, 'RS256')
-    end
-
-    def private_key
-      OpenSSL::PKey::RSA.new(File.open(config.client_key_path))
+      JWT.encode(jwt_payload, config.ssl_key, 'RS256')
     end
 
     def state

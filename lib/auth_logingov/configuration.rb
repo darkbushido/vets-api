@@ -34,9 +34,48 @@ module AuthLogingov
       Settings.logingov.client_cert_path
     end
 
+    def client_assertion_type
+      'urn:ietf:params:oauth:client-assertion-type:jwt-bearer'
+    end
+
+    def grant_type
+      'authorization_code'
+    end
+
+    def client_assertion_expiration_seconds
+      1000
+    end
+
+    def prompt
+      'select_account'
+    end
+
+    def response_type
+      'code'
+    end
+
+    def auth_path
+      'openid_connect/authorize'
+    end
+
+    def token_path
+      'api/openid_connect/token'
+    end
+
+    def userinfo_path
+      'api/openid_connect/userinfo'
+    end
+
+    def ssl_key
+      OpenSSL::PKey::RSA.new(File.read(client_key_path))
+    end
+
+    def ssl_cert
+      OpenSSL::X509::Certificate.new(File.read(client_cert_path))
+    end
+
     # Service name for breakers integration
     # @return String the service name
-    #
     def service_name
       'Logingov'
     end
@@ -46,35 +85,18 @@ module AuthLogingov
     #
     def connection
       @connection ||= Faraday.new(
-        base_path, headers: base_request_headers, request: request_options, ssl: ssl_options
+        base_path,
+        headers: base_request_headers,
+        request: request_options,
+        ssl: { client_cert: ssl_cert,
+               client_key: ssl_key }
       ) do |conn|
         conn.use :breakers
         conn.use Faraday::Response::RaiseError
-        conn.request(:curl, ::Logger.new(STDOUT), :warn) unless Rails.env.production?
-        conn.response(:logger, ::Logger.new(STDOUT), bodies: true) unless Rails.env.production?
         conn.response :snakecase
         conn.response :json, content_type: /\bjson$/
         conn.adapter Faraday.default_adapter
       end
-    end
-
-    private
-
-    def ssl_options
-      if ssl_cert && ssl_key
-        {
-          client_cert: ssl_cert,
-          client_key: ssl_key
-        }
-      end
-    end
-
-    def ssl_cert
-      client_cert_path ? OpenSSL::X509::Certificate.new(File.read(client_cert_path)) : nil
-    end
-
-    def ssl_key
-      client_key_path ? OpenSSL::PKey::RSA.new(File.read(client_key_path)) : nil
     end
   end
 end
