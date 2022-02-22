@@ -22,7 +22,7 @@ module Form526Workflow
     workflow_batch = Sidekiq::Batch.new
     workflow_batch.on(
       :success,
-      'BatchDoneHandlers#perform_ancillary_jobs_handler',
+      SubmitForm526BatchJobHandler,
       'submission_id' => submission.id
     )
     jids = workflow_batch.jobs do
@@ -32,32 +32,61 @@ module Form526Workflow
     jids.first
   end
 
-  class BatchDoneHandlers
+  class SubmitForm526BatchJobHandler
     # The workflow batch success handler
     #
     # @param _status [Sidekiq::Batch::Status] the status of the batch
     # @param options [Hash] payload set in the workflow batch
     #
-    def perform_ancillary_jobs_handler(_status, options)
+    def on_success(_status, options)
       submission = Form526Submission.find(options['submission_id'])
       # Only run ancillary jobs if submission succeeded
-      submission.perform_ancillary_jobs(submission.get_first_name) if submission.jobs_succeeded?
+      perform_ancillary_jobs(submission) if submission.jobs_succeeded?
     end
 
+    # Creates a batch for the ancillary jobs, sets up the callback, and adds the jobs to the batch if necessary
+    #
+    # @param first_name [String] the first name of the user that submitted Form526
+    # @return [String] the workflow batch id
+    #
+    def perform_ancillary_jobs(submission)
+      workflow_batch = Sidekiq::Batch.new
+      workflow_batch.on(
+        :success,
+        WorkflowCompleteJobHandler,
+        'submission_id' => submission.id,
+        'first_name' => submission.get_first_name
+      )
+      workflow_batch.jobs do
+        submission.submit_and_cleanup
+      end
+    end
+  end
+
+  class WorkflowCompleteJobHandler
     # Checks if all workflow steps were successful and if so marks it as complete.
     #
     # @param _status [Sidekiq::Batch::Status] the status of the batch
     # @param options [Hash] payload set in the workflow batch
     #
-    def workflow_complete_handler(_status, options)
+    def on_success(_status, options)
       submission = Form526Submission.find(options['submission_id'])
       if submission.jobs_succeeded?
-        submission.send_form526_confirmation_email(options['first_name'])
+        Form526ConfirmationEmailJob.perform_async(personalization_parameters(submission, options['first_name']))
         submission.workflow_complete = true
         submission.save
       else
-        submission.send_form526_submission_failed_email(options['first_name'])
+        Form526SubmissionFailedEmailJob.perform_async(personalization_parameters(submission, options['first_name']))
       end
+    end
+
+    def personalization_parameters(submission, first_name)
+      {
+        'email' => submission.form['form526']['form526']['veteran']['emailAddress'],
+        'submitted_claim_id' => submission.submitted_claim_id,
+        'date_submitted' => submission.created_at.strftime('%B %-d, %Y %-l:%M %P %Z').sub(/([ap])m/, '\1.m.'),
+        'first_name' => first_name
+      }
     end
   end
 
@@ -77,54 +106,18 @@ module Form526Workflow
     end
   end
 
-  # Creates a batch for the ancillary jobs, sets up the callback, and adds the jobs to the batch if necessary
-  #
-  # @param first_name [String] the first name of the user that submitted Form526
-  # @return [String] the workflow batch id
-  #
-  def perform_ancillary_jobs(first_name)
-    workflow_batch = Sidekiq::Batch.new
-    workflow_batch.on(
-      :success,
-      'BatchDoneHandlers#workflow_complete_handler',
-      'submission_id' => id,
-      'first_name' => first_name
-    )
-    workflow_batch.jobs do
-      submit_uploads if form[FORM_526_UPLOADS].present?
-      submit_form_4142 if form[FORM_4142].present?
-      submit_form_0781 if form[FORM_0781].present?
-      submit_form_8940 if form[FORM_8940].present?
-      upload_bdd_instructions if bdd?
-      submit_flashes if form[FLASHES].present?
-      cleanup
-    end
-  end
-
   def bdd?
     form.dig('form526', 'form526', 'bddQualified') || false
   end
 
-  def send_form526_confirmation_email(first_name)
-    email_address = form['form526']['form526']['veteran']['emailAddress']
-    personalization_parameters = {
-      'email' => email_address,
-      'submitted_claim_id' => submitted_claim_id,
-      'date_submitted' => created_at.strftime('%B %-d, %Y %-l:%M %P %Z').sub(/([ap])m/, '\1.m.'),
-      'first_name' => first_name
-    }
-    Form526ConfirmationEmailJob.perform_async(personalization_parameters)
-  end
-
-  def send_form526_submission_failed_email(first_name)
-    email_address = form['form526']['form526']['veteran']['emailAddress']
-    personalization_parameters = {
-      'email' => email_address,
-      'submitted_claim_id' => submitted_claim_id,
-      'date_submitted' => created_at.strftime('%B %-d, %Y %-l:%M %P %Z').sub(/([ap])m/, '\1.m.'),
-      'first_name' => first_name
-    }
-    Form526SubmissionFailedEmailJob.perform_async(personalization_parameters)
+  def submit_and_cleanup
+    submit_uploads if form[FORM_526_UPLOADS].present?
+    submit_form_4142 if form[FORM_4142].present?
+    submit_form_0781 if form[FORM_0781].present?
+    submit_form_8940 if form[FORM_8940].present?
+    upload_bdd_instructions if bdd?
+    submit_flashes if form[FLASHES].present?
+    cleanup
   end
 
   private

@@ -440,11 +440,11 @@ RSpec.describe Form526Submission do
     end
   end
 
-  describe 'BatchDoneHandlers#perform_ancillary_jobs_handler' do
+  describe 'SubmitForm526BatchJobHandler#on_success' do
     let(:status) { OpenStruct.new(parent_bid: SecureRandom.hex(8)) }
 
     context 'with an ancillary job' do
-      let(:workflow_steps) { Form526Workflow::BatchDoneHandlers.new }
+      let(:workflow_step) { Form526Workflow::SubmitForm526BatchJobHandler.new }
       let(:form_json) do
         File.read('spec/support/disability_compensation_form/submissions/with_uploads.json')
       end
@@ -453,7 +453,7 @@ RSpec.describe Form526Submission do
         subject.form526_job_statuses <<
           Form526JobStatus.new(job_class: 'SubmitForm526AllClaim', status: 'success', job_id: 0)
         expect do
-          workflow_steps.perform_ancillary_jobs_handler(status, 'submission_id' => subject.id)
+          workflow_step.on_success(status, 'submission_id' => subject.id)
         end.to change(EVSS::DisabilityCompensationForm::SubmitUploads.jobs, :size).by(3)
       end
 
@@ -471,7 +471,7 @@ RSpec.describe Form526Submission do
           :warn,
           { form_526_submission_id: subject.id }
         )
-        workflow_steps.perform_ancillary_jobs_handler(status, 'submission_id' => subject.id)
+        workflow_step.on_success(status, 'submission_id' => subject.id)
       end
 
       it "warns when there's a successful submit526 job, but it's not the most recent submit526 job" do
@@ -489,13 +489,14 @@ RSpec.describe Form526Submission do
           :warn,
           { form_526_submission_id: subject.id }
         )
-        workflow_steps.perform_ancillary_jobs_handler(status, 'submission_id' => subject.id)
+        workflow_step.on_success(status, 'submission_id' => subject.id)
       end
     end
   end
 
-  describe '#perform_ancillary_jobs' do
+  describe 'SubmitForm526BatchJobHandler#perform_ancillary_jobs' do
     let(:first_name) { 'firstname' }
+    let(:job_handler) { Form526Workflow::SubmitForm526BatchJobHandler.new }
 
     context 'with (3) uploads' do
       let(:form_json) do
@@ -504,7 +505,7 @@ RSpec.describe Form526Submission do
 
       it 'queues 3 upload jobs' do
         expect do
-          subject.perform_ancillary_jobs(first_name)
+          job_handler.perform_ancillary_jobs(subject)
         end.to change(EVSS::DisabilityCompensationForm::SubmitUploads.jobs, :size).by(3)
       end
     end
@@ -519,7 +520,7 @@ RSpec.describe Form526Submission do
 
         it 'queues flashes job' do
           expect do
-            subject.perform_ancillary_jobs(first_name)
+            job_handler.perform_ancillary_jobs(subject)
           end.to change(BGS::FlashUpdater.jobs, :size).by(1)
         end
       end
@@ -529,7 +530,7 @@ RSpec.describe Form526Submission do
 
         it 'queues flashes job' do
           expect do
-            subject.perform_ancillary_jobs(first_name)
+            job_handler.perform_ancillary_jobs(subject)
           end.to change(BGS::FlashUpdater.jobs, :size).by(0)
         end
       end
@@ -542,7 +543,7 @@ RSpec.describe Form526Submission do
 
       it 'queues 1 UploadBddInstructions job' do
         expect do
-          subject.perform_ancillary_jobs(first_name)
+          job_handler.perform_ancillary_jobs(subject)
         end.to change(EVSS::DisabilityCompensationForm::UploadBddInstructions.jobs, :size).by(1)
       end
     end
@@ -554,7 +555,7 @@ RSpec.describe Form526Submission do
 
       it 'queues a 4142 job' do
         expect do
-          subject.perform_ancillary_jobs(first_name)
+          job_handler.perform_ancillary_jobs(subject)
         end.to change(CentralMail::SubmitForm4142Job.jobs, :size).by(1)
       end
     end
@@ -566,7 +567,7 @@ RSpec.describe Form526Submission do
 
       it 'queues a 0781 job' do
         expect do
-          subject.perform_ancillary_jobs(first_name)
+          job_handler.perform_ancillary_jobs(subject)
         end.to change(EVSS::DisabilityCompensationForm::SubmitForm0781.jobs, :size).by(1)
       end
     end
@@ -578,7 +579,7 @@ RSpec.describe Form526Submission do
 
       it 'queues a 8940 job' do
         expect do
-          subject.perform_ancillary_jobs(first_name)
+          job_handler.perform_ancillary_jobs(subject)
         end.to change(EVSS::DisabilityCompensationForm::SubmitForm8940.jobs, :size).by(1)
       end
     end
@@ -661,8 +662,8 @@ RSpec.describe Form526Submission do
     end
   end
 
-  describe 'BatchDoneHandlers#workflow_complete_handler' do
-    let(:workflow_steps) { Form526Workflow::BatchDoneHandlers.new }
+  describe 'WorkflowCompleteJobHandler#on_success' do
+    let(:workflow_step) { Form526Workflow::WorkflowCompleteJobHandler.new }
 
     describe 'success' do
       let(:options) do
@@ -677,7 +678,7 @@ RSpec.describe Form526Submission do
 
         it 'sets the submission.complete to true' do
           expect(subject.workflow_complete).to be_falsey
-          workflow_steps.workflow_complete_handler(nil, 'submission_id' => subject.id)
+          workflow_step.on_success(nil, 'submission_id' => subject.id)
           subject.reload
           expect(subject.workflow_complete).to be_truthy
         end
@@ -688,7 +689,7 @@ RSpec.describe Form526Submission do
 
         it 'sets the submission.complete to true' do
           expect(subject.workflow_complete).to be_falsey
-          workflow_steps.workflow_complete_handler(nil, 'submission_id' => subject.id)
+          workflow_step.on_success(nil, 'submission_id' => subject.id)
           subject.reload
           expect(subject.workflow_complete).to be_truthy
         end
@@ -709,7 +710,7 @@ RSpec.describe Form526Submission do
             expect(args[0]['date_submitted']).to eql('July 20, 2012 2:15 p.m. UTC')
           end
 
-          workflow_steps.workflow_complete_handler(nil, options)
+          workflow_step.on_success(nil, options)
         end
       end
 
@@ -728,7 +729,7 @@ RSpec.describe Form526Submission do
             expect(args[0]['date_submitted']).to eql('July 20, 2012 11:12 a.m. UTC')
           end
 
-          workflow_steps.workflow_complete_handler(nil, options)
+          workflow_step.on_success(nil, options)
         end
       end
 
@@ -747,7 +748,7 @@ RSpec.describe Form526Submission do
             expect(args[0]['date_submitted']).to eql('July 20, 2012 8:07 a.m. UTC')
           end
 
-          workflow_steps.workflow_complete_handler(nil, options)
+          workflow_step.on_success(nil, options)
         end
       end
 
@@ -756,7 +757,7 @@ RSpec.describe Form526Submission do
 
         it 'returns one job triggered' do
           expect do
-            workflow_steps.workflow_complete_handler(nil, 'submission_id' => subject.id)
+            workflow_step.on_success(nil, 'submission_id' => subject.id)
           end.to change(Form526ConfirmationEmailJob.jobs, :size).by(1)
         end
       end
@@ -768,7 +769,7 @@ RSpec.describe Form526Submission do
 
         it 'sets the submission.complete to true' do
           expect(subject.workflow_complete).to be_falsey
-          workflow_steps.workflow_complete_handler(nil, 'submission_id' => subject.id)
+          workflow_step.on_success(nil, 'submission_id' => subject.id)
           subject.reload
           expect(subject.workflow_complete).to be_falsey
         end
@@ -779,7 +780,7 @@ RSpec.describe Form526Submission do
 
         it 'sets the submission.complete to true' do
           expect(subject.workflow_complete).to be_falsey
-          workflow_steps.workflow_complete_handler(nil, 'submission_id' => subject.id)
+          workflow_step.on_success(nil, 'submission_id' => subject.id)
           subject.reload
           expect(subject.workflow_complete).to be_falsey
         end
@@ -790,14 +791,14 @@ RSpec.describe Form526Submission do
 
         it 'returns zero jobs triggered' do
           expect do
-            workflow_steps.workflow_complete_handler(nil, 'submission_id' => subject.id)
+            workflow_step.on_success(nil, 'submission_id' => subject.id)
           end.to change(Form526ConfirmationEmailJob.jobs, :size).by(0)
         end
       end
 
       it 'sends a submission failed email notification' do
         expect do
-          workflow_steps.workflow_complete_handler(nil, 'submission_id' => subject.id)
+          workflow_step.on_success(nil, 'submission_id' => subject.id)
         end.to change(Form526SubmissionFailedEmailJob.jobs, :size).by(1)
       end
     end
