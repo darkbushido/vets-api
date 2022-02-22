@@ -15,7 +15,6 @@ module V2
     end
 
     def callback
-      binding.pry
       token = logingov_auth_service.token(params[:code])
       puts token
       # userInfo = AuthenticateService.new.userInfoFromToken(token)
