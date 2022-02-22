@@ -11,14 +11,27 @@ module AuthLogingov
   #   configuration AuthLogingov::Configuration
   #
   class Configuration < Common::Client::Configuration::REST
-    CERT_PATH = Settings.logingov.client_cert_path
-    KEY_PATH = Settings.logingov.client_key_path
-
     # Override the parent's base path
     # @return String the service base path from the environment settings
     #
     def base_path
       Settings.logingov.oauth_url
+    end
+
+    def client_id
+      Settings.logingov.client_id
+    end
+
+    def redirect_uri
+      Settings.logingov.redirect_uri
+    end
+
+    def client_key_path
+      Settings.logingov.client_key_path
+    end
+
+    def client_cert_path
+      Settings.logingov.client_cert_path
     end
 
     # Service name for breakers integration
@@ -37,6 +50,8 @@ module AuthLogingov
       ) do |conn|
         conn.use :breakers
         conn.use Faraday::Response::RaiseError
+        conn.request(:curl, ::Logger.new(STDOUT), :warn) unless Rails.env.production?
+        conn.response(:logger, ::Logger.new(STDOUT), bodies: true) unless Rails.env.production?
         conn.response :snakecase
         conn.response :json, content_type: /\bjson$/
         conn.adapter Faraday.default_adapter
@@ -55,11 +70,11 @@ module AuthLogingov
     end
 
     def ssl_cert
-      CERT_PATH ? OpenSSL::X509::Certificate.new(File.read(CERT_PATH)) : nil
+      client_cert_path ? OpenSSL::X509::Certificate.new(File.read(client_cert_path)) : nil
     end
 
     def ssl_key
-      KEY_PATH ? OpenSSL::PKey::RSA.new(File.read(KEY_PATH)) : nil
+      client_key_path ? OpenSSL::PKey::RSA.new(File.read(client_key_path)) : nil
     end
   end
 end
