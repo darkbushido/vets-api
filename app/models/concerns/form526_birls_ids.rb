@@ -77,5 +77,4 @@ module Form526BirlsIds
     self.auth_headers_json = headers.to_json
     @auth_headers_hash = nil # reset cache
   end
-
 end
