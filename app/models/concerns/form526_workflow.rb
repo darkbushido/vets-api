@@ -114,10 +114,6 @@ module Form526Workflow
     end
   end
 
-  def bdd?
-    form.dig('form526', 'form526', 'bddQualified') || false
-  end
-
   def submit_and_cleanup
     submit_uploads if form[FORM_526_UPLOADS].present?
     submit_form_4142 if form[FORM_4142].present?

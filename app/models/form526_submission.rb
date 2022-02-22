@@ -118,6 +118,10 @@ class Form526Submission < ApplicationRecord
     @form_hash ||= JSON.parse(form_json)
   end
 
+  def bdd?
+    form.dig('form526', 'form526', 'bddQualified') || false
+  end
+
   # A 526 submission can include the 526 form submission, uploads, and ancillary items.
   # This method returns a single item as JSON
   #
