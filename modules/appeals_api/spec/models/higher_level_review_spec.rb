@@ -9,9 +9,9 @@ describe AppealsApi::HigherLevelReview, type: :model do
   let(:higher_level_review) { default_higher_level_review }
   let(:default_higher_level_review) { create :higher_level_review, :status_received }
   let(:auth_headers) { default_auth_headers }
-  let(:default_auth_headers) { fixture_as_json 'valid_200996_headers.json' }
+  let(:default_auth_headers) { fixture_as_json 'valid_200996_headers.json', version: 'v1' }
   let(:form_data) { default_form_data }
-  let(:default_form_data) { fixture_as_json 'valid_200996.json' }
+  let(:default_form_data) { fixture_as_json 'valid_200996.json', version: 'v1' }
   let(:form_data_attributes) { form_data.dig('data', 'attributes') }
 
   describe '#first_name' do
@@ -307,6 +307,7 @@ describe AppealsApi::HigherLevelReview, type: :model do
 
   describe 'V2' do
     let(:higher_level_review_v2) { create :extra_higher_level_review_v2 }
+    let(:hlr_veteran_only) { create(:minimal_higher_level_review_v2) }
 
     describe '#number_and_street' do
       subject { higher_level_review_v2.number_and_street }
@@ -341,8 +342,36 @@ describe AppealsApi::HigherLevelReview, type: :model do
     describe '#claimant' do
       subject { higher_level_review_v2.claimant }
 
-      it do
-        expect(subject.class).to eq AppealsApi::NonVeteranClaimant
+      it { expect(subject.class).to eq AppealsApi::Appellant }
+    end
+
+    describe '#veteran' do
+      subject { higher_level_review_v2.veteran }
+
+      it { expect(subject.class).to eq AppealsApi::Appellant }
+    end
+
+    context 'when veteran only data' do
+      describe '#signing_appellant' do
+        let(:appellant_type) { hlr_veteran_only.signing_appellant.send(:type) }
+
+        it { expect(appellant_type).to eq :veteran }
+      end
+
+      describe '#appellant_local_time' do
+        it { expect(hlr_veteran_only.appellant_local_time.strftime('%Z')).to eq 'UTC' }
+      end
+    end
+
+    context 'when veteran and claimant data' do
+      describe '#signing_appellant' do
+        let(:appellant_type) { higher_level_review_v2.signing_appellant.send(:type) }
+
+        it { expect(appellant_type).to eq :claimant }
+      end
+
+      describe '#appellant_local_time' do
+        it { expect(higher_level_review_v2.appellant_local_time.strftime('%Z')).to eq 'EST' }
       end
     end
   end

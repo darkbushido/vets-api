@@ -11,11 +11,11 @@ describe AppealsApi::V1::DecisionReviews::HigherLevelReviewsController, type: :r
   end
 
   before(:all) do
-    @data = fixture_to_s 'valid_200996.json'
-    @invalid_data = fixture_to_s 'invalid_200996.json'
-    @headers = fixture_as_json 'valid_200996_headers.json'
-    @minimum_required_headers = fixture_as_json 'valid_200996_headers_minimum.json'
-    @invalid_headers = fixture_as_json 'invalid_200996_headers.json'
+    @data = fixture_to_s 'valid_200996.json', version: 'v1'
+    @invalid_data = fixture_to_s 'invalid_200996.json', version: 'v1'
+    @headers = fixture_as_json 'valid_200996_headers.json', version: 'v1'
+    @minimum_required_headers = fixture_as_json 'valid_200996_headers_minimum.json', version: 'v1'
+    @invalid_headers = fixture_as_json 'invalid_200996_headers.json', version: 'v1'
   end
 
   let(:parsed) { JSON.parse(response.body) }
@@ -24,7 +24,7 @@ describe AppealsApi::V1::DecisionReviews::HigherLevelReviewsController, type: :r
     let(:path) { base_path 'higher_level_reviews' }
 
     context 'creates an HLR and persists the data' do
-      xit 'with all headers' do
+      it 'with all headers' do
         post(path, params: @data, headers: @headers)
         hlr = AppealsApi::HigherLevelReview.last
         expect(hlr.source).to eq('va.gov')
@@ -32,19 +32,19 @@ describe AppealsApi::V1::DecisionReviews::HigherLevelReviewsController, type: :r
         expect(parsed['data']['attributes']['status']).to eq('pending')
       end
 
-      xit 'with the minimum required headers' do
+      it 'with the minimum required headers' do
         post(path, params: @data, headers: @minimum_required_headers)
         expect(parsed['data']['type']).to eq('higherLevelReview')
         expect(parsed['data']['attributes']['status']).to eq('pending')
       end
 
-      xit 'fails when a required header is missing' do
+      it 'fails when a required header is missing' do
         post(path, params: @data, headers: @minimum_required_headers.except('X-VA-SSN'))
         expect(response.status).to eq(422)
         expect(parsed['errors']).to be_an Array
       end
 
-      xit 'fails when the phone number is too long' do
+      it 'fails when the phone number is too long' do
         data = JSON.parse(@data)
         data['data']['attributes']['veteran'].merge!(
           { 'phone' => { 'areaCode' => '999', 'phoneNumber' => '1234567890', 'phoneNumberExt' => '1234567890' } }
@@ -60,7 +60,7 @@ describe AppealsApi::V1::DecisionReviews::HigherLevelReviewsController, type: :r
         )
       end
 
-      xit 'fails when the informal conference rep data is too long' do
+      it 'fails when the informal conference rep data is too long' do
         data = JSON.parse(@data)
         data['data']['attributes']['informalConferenceRep'].merge!(
           { 'name' => 'x' * 1000 }
@@ -70,9 +70,17 @@ describe AppealsApi::V1::DecisionReviews::HigherLevelReviewsController, type: :r
         expect(response.status).to eq(422)
         expect(parsed['errors'][0]['detail']).to include('Informal conference rep will not fit on form')
       end
+
+      it 'does not sunset in the next 30 days' do
+        # Safety test. Will fail if the sunset_date is within 30 days. We got burned by this before,
+        # so being heavy handed with it here.
+        Timecop.travel(30.days.from_now.beginning_of_day) do
+          expect(post(path, params: @data, headers: @headers)).not_to be 404
+        end
+      end
     end
 
-    xit 'create the job to build the PDF' do
+    it 'create the job to build the PDF' do
       client_stub = instance_double('CentralMail::Service')
       faraday_response = instance_double('Faraday::Response')
 
@@ -88,13 +96,13 @@ describe AppealsApi::V1::DecisionReviews::HigherLevelReviewsController, type: :r
       expect(nod.status).to eq('submitted')
     end
 
-    xit 'invalid headers return an error' do
+    it 'invalid headers return an error' do
       post(path, params: @data, headers: @invalid_headers)
       expect(response.status).to eq(422)
       expect(parsed['errors'][0]['detail']).to eq('Veteran birth date isn\'t in the past: 3000-12-31')
     end
 
-    xit 'responds with a 422 when request.body is a Puma::NullIO' do
+    it 'responds with a 422 when request.body is a Puma::NullIO' do
       fake_puma_null_io_object = Object.new.tap do |obj|
         def obj.class
           OpenStruct.new name: 'Puma::NullIO'
@@ -118,7 +126,7 @@ describe AppealsApi::V1::DecisionReviews::HigherLevelReviewsController, type: :r
       context 'request.body is a JSON string' do
         let(:json) { '"Hello!"' }
 
-        xit 'responds with a properly formed error object' do
+        it 'responds with a properly formed error object' do
           post(path, params: @data, headers: @headers)
           body = JSON.parse(response.body)
           expect(response.status).to eq 422
@@ -130,7 +138,7 @@ describe AppealsApi::V1::DecisionReviews::HigherLevelReviewsController, type: :r
       context 'request.body is a JSON integer' do
         let(:json) { '66' }
 
-        xit 'responds with a properly formed error object' do
+        it 'responds with a properly formed error object' do
           post(path, params: @data, headers: @headers)
           body = JSON.parse(response.body)
           expect(response.status).to eq 422
@@ -144,19 +152,19 @@ describe AppealsApi::V1::DecisionReviews::HigherLevelReviewsController, type: :r
   describe '#validate' do
     let(:path) { base_path 'higher_level_reviews/validate' }
 
-    xit 'returns a response when valid' do
+    it 'returns a response when valid' do
       post(path, params: @data, headers: @headers)
       expect(parsed['data']['attributes']['status']).to eq('valid')
       expect(parsed['data']['type']).to eq('higherLevelReviewValidation')
     end
 
-    xit 'returns a response when invalid' do
+    it 'returns a response when invalid' do
       post(path, params: @invalid_data, headers: @headers)
       expect(response.status).to eq(422)
       expect(parsed['errors']).not_to be_empty
     end
 
-    xit 'responds properly when JSON parse error' do
+    it 'responds properly when JSON parse error' do
       allow(JSON).to receive(:parse).and_raise(JSON::ParserError)
       post(path, params: @invalid_data, headers: @headers)
       expect(response.status).to eq(422)
@@ -166,7 +174,7 @@ describe AppealsApi::V1::DecisionReviews::HigherLevelReviewsController, type: :r
   describe '#schema' do
     let(:path) { base_path 'higher_level_reviews/schema' }
 
-    xit 'renders the json schema' do
+    it 'renders the json schema' do
       get path
       expect(response.status).to eq(200)
     end
@@ -175,14 +183,14 @@ describe AppealsApi::V1::DecisionReviews::HigherLevelReviewsController, type: :r
   describe '#show' do
     let(:path) { base_path 'higher_level_reviews/' }
 
-    xit 'returns a higher_level_review with all of its data' do
+    it 'returns a higher_level_review with all of its data' do
       uuid = create(:higher_level_review).id
       get("#{path}#{uuid}")
       expect(response.status).to eq(200)
       expect(parsed.dig('data', 'attributes', 'formData')).to be_a Hash
     end
 
-    xit 'allow for status simulation' do
+    it 'allow for status simulation' do
       with_settings(Settings, vsp_environment: 'development') do
         with_settings(Settings.modules_appeals_api, status_simulation_enabled: true) do
           uuid = create(:higher_level_review).id

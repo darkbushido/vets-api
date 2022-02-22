@@ -870,6 +870,7 @@ flipper:
     - saman.moshafi@thoughtworks.com
     - samara.strauss@va.gov
     - sarah.knopp@agile6.com # Sarah Knopp (Agile 6), Scrum Master
+    - scott.james@gcio.com
     - scy0846@gmail.com # Taylor Mitchell - GCIO
     - shefai.nayak@thoughtworks.com
     - ssuddath@governmentcio.com
@@ -878,6 +879,7 @@ flipper:
     - travis.hilton@oddball.io
     - trevor.bosaw@oddball.io
     - tze@adhocteam.us
+    - yoom@navapbc.com
     - zmorel@governmentcio.com
     - kha.huynh@thoughtworks.com
     - zach.morel@gcio.com
@@ -1049,6 +1051,7 @@ vanotify:
       template_id:
         contact_info_change: fake_template_id
         form526_confirmation_email: fake_template_id
+        form526_submission_failed_email: fake_template_id
         covid_vaccine_registration: fake_template_id
         covid_vaccine_expanded_registration: fake_template_id
         direct_deposit_edu: edu_template_id
@@ -1235,6 +1238,14 @@ bid:
     base_url: ~
     credentials: ~
     mock: true
+
+rrd:
+  alerts:
+    recipients:
+      - fake_email
+  event_tracking:
+    recipients:
+      - fake_email
 
 # Settings for Test User Dashboard modules
 test_user_dashboard:

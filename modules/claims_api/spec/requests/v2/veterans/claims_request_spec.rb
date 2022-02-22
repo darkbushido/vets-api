@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'rails_helper'
+require 'token_validation/v2/client'
 
 RSpec.describe 'Claims', type: :request do
   let(:veteran_id) { '1013062086V794840' }
@@ -35,6 +36,42 @@ RSpec.describe 'Claims', type: :request do
             with_okta_user(scopes) do
               get all_claims_path
               expect(response.status).to eq(401)
+            end
+          end
+        end
+      end
+
+      context 'CCG (Client Credentials Grant) flow' do
+        let(:ccg_token) { OpenStruct.new(client_credentials_token?: true, payload: { 'scp' => [] }) }
+
+        context 'when provided' do
+          context 'when valid' do
+            it 'returns a 200' do
+              allow(JWT).to receive(:decode).and_return(nil)
+              allow(Token).to receive(:new).and_return(ccg_token)
+              allow_any_instance_of(TokenValidation::V2::Client).to receive(:token_valid?).and_return(true)
+              expect_any_instance_of(BGS::EbenefitsBenefitClaimsStatus)
+                .to receive(:find_benefit_claims_status_by_ptcpnt_id).and_return(
+                  benefit_claims_dto: {
+                    benefit_claim: []
+                  }
+                )
+              expect(ClaimsApi::AutoEstablishedClaim)
+                .to receive(:where).and_return([])
+
+              get all_claims_path, headers: { 'Authorization' => 'Bearer HelloWorld' }
+              expect(response.status).to eq(200)
+            end
+          end
+
+          context 'when not valid' do
+            it 'returns a 403' do
+              allow(JWT).to receive(:decode).and_return(nil)
+              allow(Token).to receive(:new).and_return(ccg_token)
+              allow_any_instance_of(TokenValidation::V2::Client).to receive(:token_valid?).and_return(false)
+
+              get all_claims_path, headers: { 'Authorization' => 'Bearer HelloWorld' }
+              expect(response.status).to eq(403)
             end
           end
         end
@@ -112,7 +149,12 @@ RSpec.describe 'Claims', type: :request do
                     {
                       benefit_claim_id: '111111111',
                       claim_status_type: 'Compensation',
-                      phase_type: 'Pending'
+                      claim_dt: '2017-05-02',
+                      phase_type: 'Pending',
+                      attention_needed: 'Yes',
+                      filed5103_waiver_ind: 'Y',
+                      development_letter_sent: 'Yes',
+                      decision_notification_sent: 'No'
                     }
                   ]
                 }
@@ -129,7 +171,7 @@ RSpec.describe 'Claims', type: :request do
               ]
             end
 
-            it 'returns a collection that contains the claim with the Lighthouse id, BGS type, & BGS status' do
+            it 'returns data for the claim with the given Lighthouse id, with other properties sourced from BGS' do
               with_okta_user(scopes) do |auth_header|
                 expect_any_instance_of(BGS::EbenefitsBenefitClaimsStatus)
                   .to receive(:find_benefit_claims_status_by_ptcpnt_id).and_return(bgs_claims)
@@ -142,9 +184,18 @@ RSpec.describe 'Claims', type: :request do
                 expect(response.status).to eq(200)
                 expect(json_response).to be_an_instance_of(Array)
                 expect(json_response.count).to eq(1)
-                expect(json_response.first['id']).to eq('0958d973-36fb-43ef-8801-2718bd33c825')
-                expect(json_response.first['type']).to eq('Compensation')
-                expect(json_response.first['status']).to eq('Pending')
+                claim = json_response.first
+                expect(claim['id']).to eq('0958d973-36fb-43ef-8801-2718bd33c825')
+                expect(claim['type']).to eq('Compensation')
+                expect(claim['status']).to eq('Pending')
+                expect(claim['date_filed']).to eq('05/02/17')
+                expect(claim['documents_needed']).to eq(true)
+                expect(claim['requested_decision']).to eq(true)
+                expect(claim['development_letter_sent']).to eq(true)
+                expect(claim['decision_letter_sent']).to eq(false)
+
+                # End Product Code is omitted when getting all claims
+                expect(claim['end_product_code']).to eq(nil)
               end
             end
           end
@@ -476,6 +527,56 @@ RSpec.describe 'Claims', type: :request do
                 expect(json_response).to be_an_instance_of(Hash)
                 expect(json_response['id']).to eq('111111111')
               end
+            end
+          end
+        end
+      end
+
+      context 'CCG (Client Credentials Grant)' do
+        let(:claim_id) { '123-abc-456-def' }
+        let(:lighthouse_claim) do
+          OpenStruct.new(
+            id: '0958d973-36fb-43ef-8801-2718bd33c825',
+            evss_id: '111111111',
+            claim_type: 'Compensation',
+            status: 'pending'
+          )
+        end
+
+        context 'when provided' do
+          context 'when valid' do
+            it 'returns a 200' do
+              allow(JWT).to receive(:decode).and_return(nil)
+              allow(Token).to receive(:new).and_return(
+                OpenStruct.new(
+                  client_credentials_token?: true,
+                  payload: { 'scp' => [] }
+                )
+              )
+              allow_any_instance_of(TokenValidation::V2::Client).to receive(:token_valid?).and_return(true)
+              expect(ClaimsApi::AutoEstablishedClaim)
+                .to receive(:get_by_id_or_evss_id).and_return(lighthouse_claim)
+              expect_any_instance_of(BGS::EbenefitsBenefitClaimsStatus)
+                .to receive(:find_benefit_claim_details_by_benefit_claim_id).and_return(nil)
+
+              get claim_by_id_path, headers: { 'Authorization' => 'Bearer HelloWorld' }
+              expect(response.status).to eq(200)
+            end
+          end
+
+          context 'when not valid' do
+            it 'returns a 403' do
+              allow(JWT).to receive(:decode).and_return(nil)
+              allow(Token).to receive(:new).and_return(
+                OpenStruct.new(
+                  client_credentials_token?: true,
+                  payload: { 'scp' => [] }
+                )
+              )
+              allow_any_instance_of(TokenValidation::V2::Client).to receive(:token_valid?).and_return(false)
+
+              get claim_by_id_path, headers: { 'Authorization' => 'Bearer HelloWorld' }
+              expect(response.status).to eq(403)
             end
           end
         end

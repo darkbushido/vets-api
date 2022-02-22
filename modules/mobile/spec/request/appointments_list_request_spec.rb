@@ -102,7 +102,7 @@ RSpec.describe 'appointments', type: :request do
         cc_json = File.read(cc_path)
         va_appointments = Mobile::V0::Adapters::VAAppointments.new.parse(
           JSON.parse(va_json, symbolize_names: true)
-        )[0]
+        )
         cc_appointments = Mobile::V0::Adapters::CommunityCareAppointments.new.parse(
           JSON.parse(cc_json, symbolize_names: true)
         )
@@ -125,7 +125,7 @@ RSpec.describe 'appointments', type: :request do
 
           before { get '/mobile/v0/appointments', headers: iam_headers, params: params }
 
-          it 'has 10 items' do
+          it 'has 5 items' do
             expect(response.parsed_body['data'].size).to eq(5)
           end
 
@@ -245,6 +245,35 @@ RSpec.describe 'appointments', type: :request do
       end
     end
 
+    context 'with at home video appointment with no location' do
+      before do
+        VCR.use_cassette('appointments/get_cc_appointments_empty', match_requests_on: %i[method uri]) do
+          VCR.use_cassette('appointments/get_appointments_at_home_no_location', match_requests_on: %i[method uri]) do
+            get '/mobile/v0/appointments', headers: iam_headers, params: nil
+          end
+        end
+      end
+
+      it 'returns an ok response' do
+        expect(response).to have_http_status(:ok)
+      end
+
+      it 'defaults location data' do
+        appointment = response.parsed_body.dig('data', 0, 'attributes')
+
+        expect(appointment['appointmentType']).to eq('VA_VIDEO_CONNECT_HOME')
+        expect(appointment['location']).to eq({ 'id' => nil,
+                                                'name' => 'No location provided',
+                                                'address' => { 'street' => nil, 'city' => nil, 'state' => nil,
+                                                               'zipCode' => nil },
+                                                'lat' => nil,
+                                                'long' => nil,
+                                                'phone' => nil,
+                                                'url' => 'https://care2.evn.va.gov',
+                                                'code' => '5364921#' })
+      end
+    end
+
     context 'with valid params' do
       let(:params) { { page: { number: 1, size: 10 }, useCache: true } }
 
@@ -329,7 +358,15 @@ RSpec.describe 'appointments', type: :request do
                 'timeZone' => 'America/Denver',
                 'vetextId' => '308;20201103.090000',
                 'reason' => nil,
-                'isCovidVaccine' => false
+                'isCovidVaccine' => false,
+                'isPending' => false,
+                'proposedTimes' => nil,
+                'typeOfCare' => nil,
+                'patientPhoneNumber' => nil,
+                'patientEmail' => nil,
+                'bestTimeToCall' => nil,
+                'friendlyLocationName' => nil
+
               }
             }
           )
@@ -378,7 +415,14 @@ RSpec.describe 'appointments', type: :request do
                 'timeZone' => 'America/New_York',
                 'vetextId' => nil,
                 'reason' => nil,
-                'isCovidVaccine' => false
+                'isCovidVaccine' => false,
+                'isPending' => false,
+                'proposedTimes' => nil,
+                'typeOfCare' => nil,
+                'patientPhoneNumber' => nil,
+                'patientEmail' => nil,
+                'bestTimeToCall' => nil,
+                'friendlyLocationName' => nil
               }
             }
           )
@@ -456,7 +500,14 @@ RSpec.describe 'appointments', type: :request do
                 'timeZone' => 'America/Denver',
                 'vetextId' => '308;20201103.090000',
                 'reason' => nil,
-                'isCovidVaccine' => false
+                'isCovidVaccine' => false,
+                'isPending' => false,
+                'proposedTimes' => nil,
+                'typeOfCare' => nil,
+                'patientPhoneNumber' => nil,
+                'patientEmail' => nil,
+                'bestTimeToCall' => nil,
+                'friendlyLocationName' => nil
               }
             }
           )
@@ -505,7 +556,14 @@ RSpec.describe 'appointments', type: :request do
                 'timeZone' => 'America/New_York',
                 'vetextId' => nil,
                 'reason' => nil,
-                'isCovidVaccine' => false
+                'isCovidVaccine' => false,
+                'isPending' => false,
+                'proposedTimes' => nil,
+                'typeOfCare' => nil,
+                'patientPhoneNumber' => nil,
+                'patientEmail' => nil,
+                'bestTimeToCall' => nil,
+                'friendlyLocationName' => nil
               }
             }
           )
@@ -858,6 +916,44 @@ RSpec.describe 'appointments', type: :request do
 
         it 'reason does not exist' do
           expect(va_appointment_without_reason['reason']).to be_nil
+        end
+      end
+    end
+
+    context 'when no va appointments are returned' do
+      before do
+        Timecop.freeze(Time.zone.parse('2020-11-01T10:30:00Z'))
+      end
+
+      after { Timecop.return }
+
+      it 'returns 200' do
+        VCR.use_cassette('appointments/get_cc_appointments', match_requests_on: %i[method uri]) do
+          VCR.use_cassette('appointments/get_appointments_empty', match_requests_on: %i[method uri]) do
+            get '/mobile/v0/appointments', headers: iam_headers, params: nil
+
+            expect(response.status).to eq 200
+          end
+        end
+      end
+    end
+
+    context 'when no cc appointments are returned' do
+      before do
+        Timecop.freeze(Time.zone.parse('2020-11-01T10:30:00Z'))
+      end
+
+      after { Timecop.return }
+
+      it 'returns 200' do
+        VCR.use_cassette('appointments/get_facilities', match_requests_on: %i[method uri]) do
+          VCR.use_cassette('appointments/get_cc_appointments_empty', match_requests_on: %i[method uri]) do
+            VCR.use_cassette('appointments/get_appointments_default', match_requests_on: %i[method uri]) do
+              get '/mobile/v0/appointments', headers: iam_headers, params: nil
+
+              expect(response.status).to eq 200
+            end
+          end
         end
       end
     end

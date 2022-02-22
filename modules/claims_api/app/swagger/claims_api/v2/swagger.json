@@ -3,7 +3,7 @@
   "info": {
     "title": "API V2",
     "version": "v2",
-    "description": "This API automatically establishes and submits these VA forms.\n| Form number       | Form name     | Description     |\n| :------------- | :----------: | -----------: |\n| [21-526EZ](https://www.va.gov/find-forms/about-form-21-526ez/) | Application for Disability Compensation and Related Compensation Benefits | Used to apply for VA disability compensation and related benefits. |\n| [21-0966](https://www.va.gov/find-forms/about-form-21-0966/) | Intent to File a Claim for Compensation and/or Pension, or Survivors Pension and/or DIC | Submits an intent to file to secure the earliest possible effective date for any retroactive payments. |\n| [21-22](https://www.va.gov/find-forms/about-form-21-22/) | Appointment of Veterans Service Organization as Claimant's Representative | Used to assign an individual or VSO as a POA to help a Veteran with benefits or claims. |\n| [21-22a](https://www.va.gov/find-forms/about-form-21-22a/) | Appointment of Individual As Claimant's Representative | |\n\nIt also lets Veterans or their authorized representatives:\n - Digitally submit supporting documentation for disability compensation claims\n - Retrieve information such as status for any claim, including pension and burial\n - Retrieve power of attorney (POA) status for individuals and Veterans Service Organizations (VSOs)\n - Retrieve intent to file status\n\n## Background\nThe Benefits Claims API offers faster establishment and enhanced reporting for several VA claims and forms. Using this API provides many benefits, such as:\n - Automatic claim and POA establishment\n - Direct establishment of disability compensation claims in Veterans Benefits Management System (VBMS) to avoid unnecessary manual processing and entry by Veteran Service Representatives (VSRs)\n - Faster claims processing by several days\n - End-to-end claims status and result tracking by claim ID\n\nForms not supported by the Benefits Claims API are submitted using the [Benefits Intake API](https://developer.va.gov/explore/benefits/docs/benefits?version=current), which places uploaded PDFs into the Centralized Mail Portal to be manually processed.\n\n## Technical Overview\nThis API accepts a payload of requests and responses on a per-form basis, with the payload identifying the form and Veteran. Trackable responses provide a unique ID which is used with the appropriate GET endpoint to track a submission’s processing status.\n\n### Attachment and file size limits\nThere is no limit on the number of files a payload can contain, but size limits do apply.\n - Uploaded documents cannot be larger than 11\" x 11\"\n - The entire payload cannot exceed 5 GB\n - No single file in a payload can exceed 100 MB\n\n### Authentication and authorization\nTo make an API request, follow our [authentication process](https://developer.va.gov/explore/authorization?api=claims) to receive an [OAuth token](https://oauth.net/2/).\n\n#### Representative authorization\nAccredited representatives may make requests to the Claims API on behalf of Veterans that they represent. To make API requests on behalf of a Veteran, representatives must:\n - be [accredited with the VA Office of the General Counsel](https://www.va.gov/ogc/apps/accreditation/index.asp)\n - be [authenticated](https://developer.va.gov/explore/authorization?api=claims) using an identity-proofed account\n - be the current Power of Attorney (POA) on record for the Veteran (accredited representatives can use the ‘/veterans/{veteranId}/power-of-attorney’ endpoint to check a Veteran’s current POA)\n\n#### Finding a Veteran's unique VA ID\nThe Claims API uses a unique Veteran identifier to identify the subject of each API request. This Veteran identifier can be retrieved by an authenticated Veteran or an accredited representative by passing name, DOB, and SSN to the ‘/veteran-id’ endpoint. This identifier should then be used as the Veteran ID parameter in request URLs.\n\n*Note: though Veteran identifiers are typically static, they may change over time. If a specific Veteran ID suddenly responds with a ‘404 not found’ error, the identifier may have changed. It’s a good idea to retrieve the current identifier for each Veteran periodically.*\n\n### POA Codes\nVeteran representatives receive their organization’s POA code. If they are the assigned POA for a Veteran, that Veteran will have a matching POA code. When a claim is submitted, this API verifies that the representative and Veteran codes match against each other and the codes in the [Office of General Council (OGC) Database](https://www.va.gov/ogc/apps/accreditation/index.asp).\n\nUse the [Power of Attorney endpoint](#operations-Power_of_Attorney-post2122) to assign or update POA status. A newly appointed representative may not be able to submit forms for a Veteran until a day after their POA code is first associated with the OGC data set.\n\n### Test data for sandbox environment use\n[Test data](https://github.com/department-of-veterans-affairs/vets-api-clients/blob/master/test_accounts.md) is used for all forms in the sandbox environment and for 21-526 submissions in the staging environment.\n\n### Claim and form processing\nClaims and forms are first submitted by this API and then established in VBMS. A 200 response means only that your claim or form was submitted successfully. To see if your submission is processed or has reached VBMS, you must check its status using the appropriate GET endpoint and the ID returned with your submission response.\n\nA “claim established” status means the claim has reached VBMS. In sandbox, submissions can take over an hour to reach “claim established” status. In production, this may take over two days.\n"
+    "description": "This API automatically establishes and submits these VA forms.\n| Form number       | Form name     | Description     |\n| :------------- | :----------: | -----------: |\n| [21-526EZ](https://www.va.gov/find-forms/about-form-21-526ez/) | Application for Disability Compensation and Related Compensation Benefits | Used to apply for VA disability compensation and related benefits. |\n| [21-0966](https://www.va.gov/find-forms/about-form-21-0966/) | Intent to File a Claim for Compensation and/or Pension, or Survivors Pension and/or DIC | Submits an intent to file to secure the earliest possible effective date for any retroactive payments. |\n| [21-22](https://www.va.gov/find-forms/about-form-21-22/) | Appointment of Veterans Service Organization as Claimant's Representative | Used to assign a Veterans Service Organization as a POA to help a Veteran with benefits or claims. |\n| [21-22a](https://www.va.gov/find-forms/about-form-21-22a/) | Appointment of Individual As Claimant's Representative | Used to assign an individual as a POA to help a Veteran with benefits or claims. |\n\nIt also lets Veterans or their authorized representatives:\n - Digitally submit supporting documentation for disability compensation claims\n - Retrieve information such as status for any claim, including pension and burial\n - Retrieve power of attorney (POA) status for individuals and Veterans Service Organizations (VSOs)\n - Retrieve intent to file status\n\n## Background\nThe Benefits Claims API offers faster establishment and enhanced reporting for several VA claims and forms. Using this API provides many benefits, such as:\n - Automatic claim and POA establishment\n - Direct establishment of disability compensation claims in Veterans Benefits Management System (VBMS) to avoid unnecessary manual processing and entry by Veteran Service Representatives (VSRs)\n - Faster claims processing by several days\n - End-to-end claims status and result tracking by claim ID\n\nForms not supported by the Benefits Claims API are submitted using the [Benefits Intake API](https://developer.va.gov/explore/benefits/docs/benefits?version=current), which places uploaded PDFs into the Centralized Mail Portal to be manually processed.\n\n## Technical Overview\nThis API accepts a payload of requests and responses on a per-form basis, with the payload identifying the form and Veteran. Trackable responses provide a unique ID which is used with the appropriate GET endpoint to track a submission’s processing status.\n\n### Attachment and file size limits\nThere is no limit on the number of files a payload can contain, but size limits do apply.\n - Uploaded documents cannot be larger than 11\" x 11\"\n - The entire payload cannot exceed 5 GB\n - No single file in a payload can exceed 100 MB\n\n### Authentication and authorization\nTo make an API request, follow our [authentication process](https://developer.va.gov/explore/authorization?api=claims) to receive an [OAuth token](https://oauth.net/2/).\n\n#### Representative authorization\nAccredited representatives may make requests to the Claims API on behalf of Veterans that they represent. To make API requests on behalf of a Veteran, representatives must:\n - be [accredited with the VA Office of the General Counsel](https://www.va.gov/ogc/apps/accreditation/index.asp)\n - be [authenticated](https://developer.va.gov/explore/authorization?api=claims) using an identity-proofed account\n - be the current Power of Attorney (POA) on record for the Veteran (accredited representatives can use the ‘/veterans/{veteranId}/power-of-attorney’ endpoint to check a Veteran’s current POA)\n\n#### Finding a Veteran's unique VA ID\nThe Claims API uses a unique Veteran identifier to identify the subject of each API request. This Veteran identifier can be retrieved by an authenticated Veteran or an accredited representative by passing name, DOB, and SSN to the ‘/veteran-id’ endpoint. This identifier should then be used as the Veteran ID parameter in request URLs.\n\n*Note: though Veteran identifiers are typically static, they may change over time. If a specific Veteran ID suddenly responds with a ‘404 not found’ error, the identifier may have changed. It’s a good idea to retrieve the current identifier for each Veteran periodically.*\n\n### POA Codes\nVeteran representatives receive their organization’s POA code. If they are the assigned POA for a Veteran, that Veteran will have a matching POA code. When a claim is submitted, this API verifies that the representative and Veteran codes match against each other and the codes in the [Office of General Council (OGC) Database](https://www.va.gov/ogc/apps/accreditation/index.asp).\n\nUse the [Power of Attorney endpoint](#operations-Power_of_Attorney-post2122) to assign or update POA status. A newly appointed representative may not be able to submit forms for a Veteran until a day after their POA code is first associated with the OGC data set.\n\n### Test data for sandbox environment use\n[Test data](https://github.com/department-of-veterans-affairs/vets-api-clients/blob/master/test_accounts.md) is used for all forms in the sandbox environment and for 21-526 submissions in the staging environment.\n\n### Claim and form processing\nClaims and forms are first submitted by this API and then established in VBMS. A 200 response means only that your claim or form was submitted successfully. To see if your submission is processed or has reached VBMS, you must check its status using the appropriate GET endpoint and the ID returned with your submission response.\n\nA “claim established” status means the claim has reached VBMS. In sandbox, submissions can take over an hour to reach “claim established” status. In production, this may take over two days.\n"
   },
   "tags": [
     {
@@ -431,6 +431,11 @@
                       "type": "GET",
                       "url": "http://www.example.com/services/benefits/v2/veterans/1013062086V794840/claims/555555555"
                     },
+                    "date_filed": "05/02/17",
+                    "decision_letter_sent": false,
+                    "development_letter_sent": false,
+                    "documents_needed": false,
+                    "requested_decision": null,
                     "status": "Complete",
                     "type": "Compensation"
                   }
@@ -439,12 +444,6 @@
                   "$schema": "http://json-schema.org/draft-04/schema#",
                   "type": "array",
                   "items": {
-                    "required": [
-                      "id",
-                      "type",
-                      "status",
-                      "@links"
-                    ],
                     "additionalProperties": false,
                     "description": "Claim details.",
                     "properties": {
@@ -462,6 +461,35 @@
                         "type": "string",
                         "description": "Status of Claim",
                         "example": "Complete"
+                      },
+                      "date_filed": {
+                        "type": "string",
+                        "format": "date",
+                        "description": "Date in YYYY-MM-DD the claim was first filed",
+                        "example": "2018-06-04"
+                      },
+                      "documents_needed": {
+                        "type": "boolean",
+                        "description": "Does the claim require additional documents to be submitted",
+                        "example": "false"
+                      },
+                      "requested_decision": {
+                        "type": [
+                          "boolean",
+                          "null"
+                        ],
+                        "description": "The claim filer has requested a claim decision be made",
+                        "example": "false"
+                      },
+                      "development_letter_sent": {
+                        "type": "boolean",
+                        "description": "Indicates if a Development Letter has been sent to the Claimant regarding a benefit claim",
+                        "example": "false"
+                      },
+                      "decision_letter_sent": {
+                        "type": "boolean",
+                        "description": "Indicates if a Decision Letter has been sent to the Claimant regarding a benefit claim",
+                        "example": "false"
                       },
                       "@links": {
                         "type": "object",
@@ -668,40 +696,38 @@
                     "type": "GET",
                     "url": "http://www.example.com/services/benefits/v2/veterans/1013062086V794840/claims/555555555"
                   },
+                  "contentionList": [
+                    "abnormal heart (New)",
+                    " abscess kidney (New)",
+                    " encephalitis lethargica residuals (New)",
+                    " dracunculiasis (New)",
+                    " gingivitis (New)",
+                    " abnormal weight loss (New)",
+                    " groin condition (New)",
+                    " metritis (New)"
+                  ],
+                  "dateFiled": "05/02/17",
+                  "decisionLetterSent": false,
+                  "developmentLetterSent": false,
+                  "documentsNeeded": false,
                   "endProductCode": "404",
+                  "requestedDecision": null,
                   "status": "Complete",
-                  "type": "Compensation"
+                  "supportingDocuments": [
+
+                  ],
+                  "type": "Compensation",
+                  "vaRepresentative": "Random E Person"
                 },
                 "schema": {
                   "$schema": "http://json-schema.org/draft-04/schema#",
                   "type": "object",
                   "additionalProperties": false,
-                  "required": [
-                    "id",
-                    "type",
-                    "status",
-                    "@links"
-                  ],
                   "properties": {
                     "id": {
                       "type": "string",
                       "description": "Claim ID",
                       "example": "600131328"
-                    },
-                    "type": {
-                      "type": "string",
-                      "description": "Name of Claim type",
-                      "example": "Appeals Control"
-                    },
-                    "status": {
-                      "type": "string",
-                      "description": "Status of Claim",
-                      "example": "Complete"
-                    },
-                    "endProductCode": {
-                      "type": "string",
-                      "description": "End Product Code of Claim",
-                      "example": "930"
                     },
                     "@links": {
                       "type": "object",
@@ -711,6 +737,81 @@
                         "type": "GET",
                         "url": "https://api.va.gov/services/claims/v2/claims/600131328"
                       }
+                    },
+                    "contentionList": {
+                      "type": "array",
+                      "description": "The contentions being submitted with a claim",
+                      "example": [
+                        "abnormal heart (New)",
+                        "abscess kidney (New)"
+                      ]
+                    },
+                    "dateFiled": {
+                      "type": "string",
+                      "description": "The date a claim was filed",
+                      "example": "5/17/20"
+                    },
+                    "decisionLetterSent": {
+                      "type": "boolean",
+                      "description": "Indicates if a Decision Letter has been sent to the Claimant regarding a benefit claim"
+                    },
+                    "developmentLetterSent": {
+                      "type": "boolean",
+                      "description": "Indicates if a Development Letter has been sent to the Claimant regarding a benefit claim"
+                    },
+                    "documentsNeeded": {
+                      "type": "boolean",
+                      "description": "Indicates whether the claim requires additional documents to be submitted"
+                    },
+                    "endProductCode": {
+                      "type": "string",
+                      "description": "End product code of claim",
+                      "example": "930"
+                    },
+                    "requestedDecision": {
+                      "type": "boolean",
+                      "nullable": true,
+                      "description": "Indicates if a decision has been requested and/or if a Waiver 5103 has been submitted"
+                    },
+                    "status": {
+                      "type": "string",
+                      "description": "Status of claim",
+                      "example": "Complete"
+                    },
+                    "supportingDocuments": {
+                      "type": "array",
+                      "description": "Information regarding any supported documents attached to a claim",
+                      "items": {
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "description": "Unique identifier of document"
+                          },
+                          "md5": {
+                            "type": "string",
+                            "description": "Hashed representation of document"
+                          },
+                          "filename": {
+                            "type": "string",
+                            "description": "Name of document"
+                          },
+                          "uploaded_at": {
+                            "type": "string",
+                            "format": "date",
+                            "description": "Date and time document was uploaded"
+                          }
+                        }
+                      }
+                    },
+                    "type": {
+                      "type": "string",
+                      "description": "Name of claim type",
+                      "example": "Appeals Control"
+                    },
+                    "vaRepresentative": {
+                      "type": "string",
+                      "description": "The current organization or individual representing the Veteran on a claim",
+                      "example": "American Legion"
                     }
                   }
                 }
@@ -1257,8 +1358,8 @@
               "application/json": {
                 "example": {
                   "id": "1",
-                  "creationDate": "2022-01-07",
-                  "expirationDate": "2023-01-07",
+                  "creationDate": "2022-02-15",
+                  "expirationDate": "2023-02-15",
                   "status": "active",
                   "type": "compensation"
                 },

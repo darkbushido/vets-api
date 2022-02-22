@@ -48,9 +48,32 @@ module AppealsApi
       ).new(self)
     end
 
-    def claimant
-      @claimant ||= NonVeteranClaimant.new(auth_headers: auth_headers, form_data: data_attributes&.dig('claimant'))
+    # V2 Start
+    def veteran
+      @veteran ||= Appellant.new(
+        type: :veteran,
+        auth_headers: auth_headers,
+        form_data: data_attributes&.dig('veteran')
+      )
     end
+
+    def claimant
+      @claimant ||= Appellant.new(
+        type: :claimant,
+        auth_headers: auth_headers,
+        form_data: data_attributes&.dig('claimant')
+      )
+    end
+
+    def signing_appellant
+      claimant.signing_appellant? ? claimant : veteran
+    end
+
+    def appellant_local_time
+      signing_appellant.timezone ? created_at.in_time_zone(signing_appellant.timezone) : created_at.utc
+    end
+
+    # V2 End
 
     def first_name
       auth_headers['X-VA-First-Name']
@@ -101,29 +124,29 @@ module AppealsApi
     end
 
     def city
-      veteran.dig('address', 'city') || ''
+      veteran_data.dig('address', 'city') || ''
     end
 
     def state_code
-      veteran.dig('address', 'stateCode') || ''
+      veteran_data.dig('address', 'stateCode') || ''
     end
 
     def country_code
       return '' unless address_combined
 
-      veteran.dig('address', 'countryCodeISO2') || 'US'
+      veteran_data.dig('address', 'countryCodeISO2') || 'US'
     end
 
     def zip_code
       if zip_code_5 == '00000'
-        veteran.dig('address', 'internationalPostalCode') || '00000'
+        veteran_data.dig('address', 'internationalPostalCode') || '00000'
       else
         zip_code_5
       end
     end
 
     def zip_code_5
-      veteran.dig('address', 'zipCode5') || '00000'
+      veteran_data.dig('address', 'zipCode5') || '00000'
     end
 
     def veteran_phone_number
@@ -131,7 +154,7 @@ module AppealsApi
     end
 
     def veteran_phone_data
-      veteran&.dig('phone')
+      veteran_data&.dig('phone')
     end
 
     def veteran_homeless?
@@ -139,11 +162,8 @@ module AppealsApi
     end
 
     def email
-      veteran&.dig('emailAddressText').to_s.strip
-    end
-
-    def email_v2
-      veteran&.dig('email').to_s.strip
+      # V2 and V1 access the email data via different keys ('email' vs 'emailAddressText')
+      veteran.email.presence || veteran_data&.dig('emailAddressText').to_s.strip
     end
 
     def benefit_type
@@ -263,7 +283,6 @@ module AppealsApi
 
     def email_identifier
       return { id_type: 'email', id_value: email } if email.present?
-      return { id_type: 'email', id_value: email_v2 } if email_v2.present?
 
       icn = mpi_veteran.mpi_icn
 
@@ -274,7 +293,7 @@ module AppealsApi
       form_data&.dig('data', 'attributes')
     end
 
-    def veteran
+    def veteran_data
       data_attributes&.dig('veteran')
     end
 
@@ -287,7 +306,7 @@ module AppealsApi
     end
 
     def veteran_phone
-      AppealsApi::HigherLevelReview::Phone.new veteran&.dig('phone')
+      AppealsApi::HigherLevelReview::Phone.new veteran_data&.dig('phone')
     end
 
     def veterans_local_time
@@ -295,7 +314,7 @@ module AppealsApi
     end
 
     def veterans_timezone
-      veteran&.dig('timezone').presence&.strip
+      veteran_data&.dig('timezone').presence&.strip
     end
 
     # validation (header)
@@ -340,12 +359,12 @@ module AppealsApi
     end
 
     def address_combined
-      return unless veteran.dig('address', 'addressLine1')
+      return unless veteran_data.dig('address', 'addressLine1')
 
       @address_combined ||=
-        [veteran.dig('address', 'addressLine1'),
-         veteran.dig('address', 'addressLine2'),
-         veteran.dig('address', 'addressLine3')].compact.map(&:strip).join(' ')
+        [veteran_data.dig('address', 'addressLine1'),
+         veteran_data.dig('address', 'addressLine2'),
+         veteran_data.dig('address', 'addressLine3')].compact.map(&:strip).join(' ')
     end
   end
 end

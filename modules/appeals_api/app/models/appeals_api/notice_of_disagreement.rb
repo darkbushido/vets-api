@@ -42,6 +42,40 @@ module AppealsApi
       ).new(self)
     end
 
+    # V2 Specific
+    def veteran
+      @veteran ||= Appellant.new(
+        type: :veteran,
+        auth_headers: auth_headers,
+        form_data: data_attributes&.dig('veteran')
+      )
+    end
+
+    def signing_appellant
+      veteran
+    end
+
+    def appellant_local_time
+      signing_appellant.timezone ? created_at.in_time_zone(signing_appellant.timezone) : created_at.utc
+    end
+
+    def extension_request?
+      data_attributes['extensionRequest']
+    end
+
+    def extension_reason
+      data_attributes['extensionReason']
+    end
+
+    def appealing_vha_denial?
+      data_attributes['appealingVhaDenial']
+    end
+
+    def contestable_issues
+      form_data&.dig('included')
+    end
+    # V2 End
+
     def veteran_first_name
       header_field_as_string 'X-VA-First-Name'
     end
@@ -91,14 +125,15 @@ module AppealsApi
     end
 
     def email
-      veteran_contact_info['emailAddressText']
+      # V2 and V1 access the email data via different keys ('email' vs 'emailAddressText')
+      veteran.email.presence || veteran_contact_info['emailAddressText']
     end
 
     def veteran_homeless?
       form_data&.dig('data', 'attributes', 'veteran', 'homeless')
     end
 
-    def veteran_representative
+    def representative_name
       form_data&.dig('data', 'attributes', 'veteran', 'representativesName')
     end
 
@@ -151,12 +186,49 @@ module AppealsApi
                                       statusable_id: id
                                     })
 
+      email_handler = Events::Handler.new(event_type: :nod_received, opts: {
+                                            email_identifier: email_identifier,
+                                            first_name: veteran_first_name,
+                                            date_submitted: veterans_local_time.iso8601,
+                                            guid: id
+                                          })
+
       update!(status: status, code: code, detail: detail)
 
       handler.handle!
+      email_handler.handle! if status == 'submitted' && email_identifier.present?
     end
 
     private
+
+    def mpi_veteran
+      AppealsApi::Veteran.new(
+        ssn: ssn,
+        first_name: veteran_first_name,
+        last_name: veteran_last_name,
+        birth_date: birth_date.iso8601
+      )
+    end
+
+    def email_identifier
+      return { id_type: 'email', id_value: email } if email.present?
+
+      icn = mpi_veteran.mpi_icn
+
+      return { id_type: 'ICN', id_value: icn } if icn.present?
+    end
+
+    def data_attributes
+      form_data&.dig('data', 'attributes')
+    end
+
+    def veterans_local_time
+      veterans_timezone ? created_at.in_time_zone(veterans_timezone) : created_at.utc
+    end
+
+    def veterans_timezone
+      data_attributes&.dig('timezone').presence&.strip
+    end
 
     def validate_hearing_type_selection
       return if board_review_hearing_selected? && includes_hearing_type_preference?
@@ -187,8 +259,8 @@ module AppealsApi
       !board_review_hearing_selected? && includes_hearing_type_preference?
     end
 
-    def birth_date(who)
-      self.class.date_from_string header_field_as_string "X-VA-#{who}-Birth-Date"
+    def birth_date
+      self.class.date_from_string header_field_as_string 'X-VA-Birth-Date'
     end
 
     def header_field_as_string(key)

@@ -144,6 +144,8 @@ Rails.application.reloader.to_prepare do
   end
   StatsD.increment(Form526ConfirmationEmailJob::STATSD_ERROR_NAME, 0)
   StatsD.increment(Form526ConfirmationEmailJob::STATSD_SUCCESS_NAME, 0)
+  StatsD.increment(Form526SubmissionFailedEmailJob::STATSD_ERROR_NAME, 0)
+  StatsD.increment(Form526SubmissionFailedEmailJob::STATSD_SUCCESS_NAME, 0)
 
   # init Higher Level Review
 
@@ -173,41 +175,6 @@ Rails.application.reloader.to_prepare do
 
   # init Facilities Jobs
   StatsD.increment('shared.sidekiq.default.Facilities_InitializingErrorMetric.error', 0)
-
-  ActiveSupport::Notifications.subscribe(
-    'facilities.ppms.request.faraday'
-  ) do |_name, start_time, end_time, _id, payload|
-    payload_statuses = ["http_status:#{payload.status}"]
-    StatsD.increment('facilities.ppms.response.failures', tags: payload_statuses) unless payload.success?
-    StatsD.increment('facilities.ppms.response.total', tags: payload_statuses)
-
-    duration = end_time - start_time
-
-    measurement = case payload[:url].path
-                  when /FacilityServiceLocator/
-                    'facilities.ppms.facility_service_locator'
-                  when /ProviderLocator/
-                    'facilities.ppms.provider_locator'
-                  when /PlaceOfServiceLocator/
-                    'facilities.ppms.place_of_service_locator'
-                  when %r{Providers\(\d+\)/ProviderServices}
-                    'facilities.ppms.providers.provider_services'
-                  when /Providers\(\d+\)/
-                    'facilities.ppms.providers'
-                  end
-
-    if measurement
-      tags = ['facilities.ppms']
-      params = Rack::Utils.parse_nested_query payload[:url].query
-
-      if params['radius']
-        tags << "facilities.ppms.radius:#{params['radius']}"
-        tags << "facilities.ppms.results:#{payload[:body].is_a?(Array) ? payload[:body]&.count : 0}"
-      end
-
-      StatsD.measure(measurement, duration, tags: tags)
-    end
-  end
 
   ActiveSupport::Notifications.subscribe(
     'facilities.ppms.v1.request.faraday'
@@ -265,6 +232,17 @@ Rails.application.reloader.to_prepare do
     StatsD.measure('facilities.lighthouse', duration, tags: ['facilities.lighthouse'])
   end
 
+  ActiveSupport::Notifications.subscribe(
+    'lighthouse.facilities.v1.request.faraday'
+  ) do |_, start_time, end_time, _, payload|
+    payload_statuses = ["http_status:#{payload.status}"]
+    StatsD.increment('facilities.lighthouse.response.failures', tags: payload_statuses) unless payload.success?
+    StatsD.increment('facilities.lighthouse.response.total', tags: payload_statuses)
+
+    duration = end_time - start_time
+    StatsD.measure('facilities.lighthouse', duration, tags: ['facilities.lighthouse'])
+  end
+
   # IAM SSOe session metrics
   StatsD.set('iam_ssoe_oauth.users', 0)
 
@@ -277,7 +255,7 @@ Rails.application.reloader.to_prepare do
   StatsD.increment('iam_ssoe_oauth.create_user_session.failure', 0)
   StatsD.increment('iam_ssoe_oauth.inactive_session', 0)
 
-  %w[IDME MHV DSL].each do |cred|
+  %w[IDME MHV DSL LOGINGOV].each do |cred|
     StatsD.increment(
       IAMSSOeOAuth::SessionManager::STATSD_OAUTH_SESSION_KEY, 0, tags: ['type:new', "credential:#{cred}"]
     )

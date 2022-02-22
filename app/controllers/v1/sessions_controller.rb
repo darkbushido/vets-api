@@ -183,7 +183,8 @@ module V1
       when 'verify'
         url_service.verify_url
       when 'custom'
-        url_service(false).custom_url params[:authn] if validate_authn_context
+        authn = validate_inbound_login_params
+        url_service(false).custom_url authn
       end
     end
     # rubocop:enable Metrics/MethodLength
@@ -357,6 +358,7 @@ module V1
     end
 
     def url_service(force_authn = true)
+      force_authn = false unless Settings.vsp_environment == 'production'
       @url_service ||= SAML::PostURLService.new(saml_settings(force_authn: force_authn),
                                                 session: @session_object,
                                                 user: current_user,

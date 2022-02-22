@@ -3,7 +3,13 @@
 module V2
   module Chip
     ##
-    # A service client for handling HTTP requests to the CHIP API.
+    # A service client for handling HTTP requests to the CHIP API.  This needs to be instantiated with a
+    # {CheckIn::V2::Session} object so that it can be used in subsequent calls.
+    #
+    # @see https://github.com/department-of-veterans-affairs/chip CHIP readme
+    #
+    # @example
+    #   client = Client.build(check_in_session: check_in)
     #
     # @!attribute settings
     #   @return [Config::Options]
@@ -29,7 +35,9 @@ module V2
       ##
       # Builds a Client instance
       #
-      # @param opts [Hash]
+      # @param opts [Hash] options to create a Client
+      # @option opts [CheckIn::V2::Session] :check_in_session the session object
+      #
       # @return [V2::Chip::Client] an instance of this class
       #
       def self.build(opts = {})
@@ -86,6 +94,17 @@ module V2
         connection.post("/#{base_path}/actions/pre-checkin/#{check_in_session.uuid}") do |req|
           req.headers = default_headers.merge('Authorization' => "Bearer #{token}")
           req.body = demographic_confirmations.to_json
+        end
+      end
+
+      ##
+      # HTTP POST call to the CHIP API to set pre check-in started status
+      #
+      # @return [Faraday::Response]
+      #
+      def set_precheckin_started(token:)
+        connection.post("/#{base_path}/actions/set-precheckin-started/#{check_in_session.uuid}") do |req|
+          req.headers = default_headers.merge('Authorization' => "Bearer #{token}")
         end
       end
 

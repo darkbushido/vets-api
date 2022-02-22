@@ -6,8 +6,8 @@ require AppealsApi::Engine.root.join('spec', 'spec_helper.rb')
 describe AppealsApi::NoticeOfDisagreement, type: :model do
   include FixtureHelpers
 
-  let(:auth_headers) { fixture_as_json 'valid_10182_headers.json' }
-  let(:form_data) { fixture_as_json 'valid_10182.json' }
+  let(:auth_headers) { fixture_as_json 'valid_10182_headers.json', version: 'v1' }
+  let(:form_data) { fixture_as_json 'valid_10182.json', version: 'v1' }
   let(:notice_of_disagreement) do
     review_option = form_data['data']['attributes']['boardReviewOption']
     build(:notice_of_disagreement, form_data: form_data, auth_headers: auth_headers, board_review_option: review_option)
@@ -51,7 +51,7 @@ describe AppealsApi::NoticeOfDisagreement, type: :model do
     end
 
     context "when board review option 'direct_review' or 'evidence_submission' is selected" do
-      let(:form_data) { fixture_as_json 'valid_10182_minimum.json' }
+      let(:form_data) { fixture_as_json 'valid_10182_minimum.json', version: 'v1' }
 
       context 'when hearing type provided' do
         before do
@@ -150,6 +150,8 @@ describe AppealsApi::NoticeOfDisagreement, type: :model do
   end
 
   describe '#update_status!' do
+    let(:notice_of_disagreement) { create(:notice_of_disagreement) }
+
     it 'error status' do
       notice_of_disagreement.update_status!(status: 'error', code: 'code', detail: 'detail')
 
@@ -178,7 +180,106 @@ describe AppealsApi::NoticeOfDisagreement, type: :model do
 
       notice_of_disagreement.update_status!(status: 'pending')
 
-      expect(handler).to have_received(:handle!)
+      expect(handler).to have_received(:handle!).exactly(1).times
+    end
+
+    it 'sends an email when emailAddressText is present' do
+      Timecop.freeze(Time.zone.now) do
+        notice_of_disagreement.update_status!(status: 'submitted')
+
+        expect(AppealsApi::EventsWorker.jobs.size).to eq(2)
+
+        status_event = AppealsApi::EventsWorker.jobs.first
+        expect(status_event['args']).to eq([
+                                             'nod_status_updated',
+                                             {
+                                               'from' => 'pending',
+                                               'to' => 'submitted',
+                                               'status_update_time' => Time.zone.now.iso8601,
+                                               'statusable_id' => notice_of_disagreement.id
+                                             }
+                                           ])
+
+        email_event = AppealsApi::EventsWorker.jobs.last
+        expect(email_event['args']).to eq([
+                                            'nod_received',
+                                            {
+                                              'email_identifier' => {
+                                                'id_type' => 'email',
+                                                'id_value' => notice_of_disagreement.email
+                                              },
+                                              'first_name' => 'Jäñe',
+                                              'date_submitted' =>
+                                              notice_of_disagreement.created_at.in_time_zone('America/Chicago').iso8601,
+                                              'guid' => notice_of_disagreement.id
+                                            }
+                                          ])
+      end
+    end
+
+    it 'successfully gets the ICN when email isn\'t present' do
+      notice_of_disagreement = described_class.create!(
+        auth_headers: auth_headers,
+        form_data: form_data.deep_merge({
+                                          'data' => {
+                                            'attributes' => {
+                                              'veteran' => {
+                                                'emailAddressText' => nil
+                                              }
+                                            }
+                                          }
+                                        })
+      )
+
+      params = { event_type: :nod_received, opts: {
+        email_identifier: { id_value: '1013062086V794840', id_type: 'ICN' },
+        first_name: notice_of_disagreement.veteran_first_name,
+        date_submitted: notice_of_disagreement.created_at.in_time_zone('America/Chicago').iso8601,
+        guid: notice_of_disagreement.id
+      } }
+
+      stub_mpi
+
+      handler = instance_double(AppealsApi::Events::Handler)
+      allow(AppealsApi::Events::Handler).to receive(:new).and_call_original
+      allow(AppealsApi::Events::Handler).to receive(:new).with(params).and_return(handler)
+      allow(handler).to receive(:handle!)
+
+      notice_of_disagreement.update_status!(status: 'submitted')
+
+      expect(AppealsApi::Events::Handler).to have_received(:new).exactly(2).times
+    end
+  end
+
+  describe 'V2 methods' do
+    let(:notice_of_disagreement_v2) { create(:extra_notice_of_disagreement_v2, :board_review_hearing) }
+
+    describe '#veteran' do
+      subject { notice_of_disagreement_v2.veteran }
+
+      it { expect(subject.class).to eq AppealsApi::Appellant }
+    end
+
+    describe '#signing_appellant' do
+      let(:appellant_type) { notice_of_disagreement_v2.signing_appellant.send(:type) }
+
+      it { expect(appellant_type).to eq :veteran }
+    end
+
+    describe '#appellant_local_time' do
+      it { expect(notice_of_disagreement_v2.appellant_local_time.strftime('%Z')).to eq 'UTC' }
+    end
+
+    describe '#extension_request?' do
+      it { expect(notice_of_disagreement_v2.extension_request?).to eq true }
+    end
+
+    describe '#extension_reason' do
+      it { expect(notice_of_disagreement_v2.extension_reason).to eq 'good cause substantive reason' }
+    end
+
+    describe '#appealing_vha_denial?' do
+      it { expect(notice_of_disagreement_v2.appealing_vha_denial?).to eq true }
     end
   end
 end

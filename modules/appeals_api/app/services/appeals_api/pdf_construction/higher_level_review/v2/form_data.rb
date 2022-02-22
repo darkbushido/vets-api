@@ -8,67 +8,106 @@ module AppealsApi
           @higher_level_review = higher_level_review
         end
 
-        delegate :first_name, :middle_initial, :last_name, :number_and_street, :city, :state_code,
-                 :country_code, :file_number, :zip_code, :insurance_policy_number, :contestable_issues, :birth_mm,
-                 :birth_dd, :birth_yyyy, :date_signed_mm, :date_signed_dd, :date_signed_yyyy, :claimant,
+        delegate :contestable_issues, :signing_appellant, :appellant_local_time, :veteran_homeless?,
+                 :veteran, :claimant,
                  to: :higher_level_review
 
-        def first_three_ssn
-          ssn.first(3)
+        delegate :first_name, :last_name, :phone_data, :number_and_street, :city, :zip_code,
+                 to: :veteran, prefix: true
+
+        delegate :first_name, :last_name, :phone_data, :number_and_street, :city, :zip_code, :email,
+                 to: :claimant, prefix: true
+
+        def veteran_phone_string
+          veteran.phone_formatted.to_s
         end
 
-        def second_two_ssn
-          ssn[3..4]
-        end
+        def veteran_area_code
+          return unless veteran.domestic_phone?
 
-        def last_four_ssn
-          ssn.last(4)
-        end
-
-        def veteran_homeless
-          higher_level_review.veteran_homeless? ? 1 : 'Off'
-        end
-
-        def veteran_phone_extension
-          ext = higher_level_review.veteran_phone_data&.dig('phoneNumberExt')
-
-          return '' if veteran_country_code != '1' || ext.blank?
-
-          "x#{ext}"
-        end
-
-        def veteran_phone_area_code
-          return if veteran_country_code != '1'
-
-          higher_level_review.veteran_phone_data&.dig('areaCode')
+          veteran_phone_data&.dig('areaCode')
         end
 
         def veteran_phone_prefix
-          return if veteran_country_code != '1'
+          return unless veteran.domestic_phone?
 
-          higher_level_review.veteran_phone_data&.dig('phoneNumber')&.first(3)
+          veteran_phone_data&.dig('phoneNumber')&.first(3)
         end
 
         def veteran_phone_line_number
-          return if veteran_country_code != '1'
+          return unless veteran.domestic_phone?
 
-          higher_level_review.veteran_phone_data['phoneNumber']&.last(4)
+          veteran_phone_data&.dig('phoneNumber')&.last(4)
         end
 
-        def veteran_phone_international_number
-          return if veteran_country_code == '1'
+        def veteran_international_number
+          return if veteran.domestic_phone?
 
-          higher_level_review.veteran_phone_number.presence ||
-            'USE PHONE ON FILE'
-        end
-
-        def veteran_country_code
-          higher_level_review.veteran_phone_data&.dig('countryCode')
+          veteran_phone_string
         end
 
         def veteran_email
-          higher_level_review.email_v2.presence ||
-            'USE EMAIL ON FILE'
+          veteran.email.presence || 'USE EMAIL ON FILE'
+        end
+
+        def veteran_ssn_first_three
+          veteran.ssn.first(3)
+        end
+
+        def veteran_ssn_second_two
+          veteran.ssn&.slice(3..4)
+        end
+
+        def veteran_ssn_last_four
+          veteran.ssn.last(4)
+        end
+
+        def veteran_homeless
+          veteran_homeless? ? 1 : 'Off'
+        end
+
+        def claimant_phone_string
+          claimant.phone_formatted.to_s
+        end
+
+        def claimant_area_code
+          return unless claimant.domestic_phone?
+
+          claimant_phone_data&.dig('areaCode')
+        end
+
+        def claimant_phone_prefix
+          return unless claimant.domestic_phone?
+
+          claimant_phone_data&.dig('phoneNumber')&.first(3)
+        end
+
+        def claimant_phone_line_number
+          return unless claimant.domestic_phone?
+
+          claimant_phone_data&.dig('phoneNumber')&.last(4)
+        end
+
+        def claimant_international_number
+          return if claimant.domestic_phone?
+
+          claimant_phone_string
+        end
+
+        def claimant_phone_ext
+          claimant_phone_data&.dig('phoneNumberExt')
+        end
+
+        def claimant_ssn_first_three
+          claimant.ssn&.first(3)
+        end
+
+        def claimant_ssn_second_two
+          claimant.ssn&.slice(3..4)
+        end
+
+        def claimant_ssn_last_four
+          claimant.ssn&.last(4)
         end
 
         def benefit_type(benefit_type)
@@ -150,20 +189,28 @@ module AppealsApi
         end
 
         def signature
-          "#{higher_level_review.full_name[0...180]}\n- Signed by digital authentication to api.va.gov"
+          "#{signing_appellant.full_name[0...180]}\n- Signed by digital authentication to api.va.gov"
+        end
+
+        def date_signed_mm
+          appellant_local_time.strftime '%m'
+        end
+
+        def date_signed_dd
+          appellant_local_time.strftime '%d'
+        end
+
+        def date_signed_yyyy
+          appellant_local_time.strftime '%Y'
         end
 
         def stamp_text
-          "#{last_name.truncate(35)} - #{ssn.last(4)}"
+          "#{veteran.last_name.truncate(35)} - #{veteran.ssn.last(4)}"
         end
 
         private
 
         attr_reader :higher_level_review
-
-        def ssn
-          higher_level_review.ssn
-        end
 
         def benefit_type_form_codes
           {
