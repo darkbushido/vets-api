@@ -17,18 +17,16 @@ module Form526Workflow
   #
   # @return [String] the job id of the first job in the batch, i.e the 526 submit job
   #
-  def start_evss_submission(_status, options)
+  def self.start_evss_submission(_status, options)
     submission = Form526Submission.find(options['submission_id'])
-    id = submission.id
     workflow_batch = Sidekiq::Batch.new
     workflow_batch.on(
       :success,
       'BatchDoneHandlers#perform_ancillary_jobs_handler',
-      'submission_id' => id,
-      'first_name' => get_first_name
+      'submission_id' => submission.id
     )
     jids = workflow_batch.jobs do
-      EVSS::DisabilityCompensationForm::SubmitForm526AllClaim.perform_async(id)
+      EVSS::DisabilityCompensationForm::SubmitForm526AllClaim.perform_async(submission.id)
     end
 
     jids.first
@@ -43,7 +41,7 @@ module Form526Workflow
     def perform_ancillary_jobs_handler(_status, options)
       submission = Form526Submission.find(options['submission_id'])
       # Only run ancillary jobs if submission succeeded
-      submission.perform_ancillary_jobs(options['first_name']) if submission.jobs_succeeded?
+      submission.perform_ancillary_jobs(submission.get_first_name) if submission.jobs_succeeded?
     end
 
     # Checks if all workflow steps were successful and if so marks it as complete.

@@ -33,7 +33,7 @@ RSpec.describe Form526Submission do
     context 'when it is all claims' do
       it 'queues an all claims job' do
         expect do
-          subject.start_evss_submission(nil, 'submission_id' => subject.id)
+          Form526Workflow.start_evss_submission(nil, 'submission_id' => subject.id)
         end.to change(EVSS::DisabilityCompensationForm::SubmitForm526AllClaim.jobs, :size).by(1)
       end
     end
@@ -69,7 +69,7 @@ RSpec.describe Form526Submission do
             allow(Sidekiq::Batch).to receive(:new).and_raise(NoMethodError)
 
             expect(Rails.logger).to receive(:error)
-            expect(form_for_hypertension).to receive(:start_evss_submission)
+            expect(Form526Workflow).to receive(:start_evss_submission)
             form_for_hypertension.start
           end
         end

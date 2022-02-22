@@ -52,12 +52,18 @@ class Form526Submission < ApplicationRecord
       end
       jids.first
     else
-      start_evss_submission(nil, { 'submission_id' => id })
+      Form526Workflow.start_evss_submission(nil, { 'submission_id' => id })
     end
   rescue => e
     Rails.logger.error 'The fast track was skipped due to the following error ' \
                        " and start_evss_submission wass called: #{e}"
-    start_evss_submission(nil, { 'submission_id' => id })
+    Form526Workflow.start_evss_submission(nil, { 'submission_id' => id })
+  end
+
+  # Instance method for Sidekiq::Batch to call on success
+  # because Sidekiq::Batch cannot call class method directly
+  def start_evss_submission
+    Form526Workflow.start_evss_submission(nil, { 'submission_id' => id })
   end
 
   # Runs the start method above but first looks to see if the veteran has BIRLS IDs that previous start
