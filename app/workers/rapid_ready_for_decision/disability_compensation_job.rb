@@ -16,7 +16,7 @@ module RapidReadyForDecision
 
     sidekiq_retries_exhausted do |msg, _ex|
       submission_id = msg['args'].first
-      submission = Form526Submission.new
+      submission = Form526Submission.find(submission_id)
       Form526Workflow::EvssSubmission.start_evss_submission(submission)
     end
 
