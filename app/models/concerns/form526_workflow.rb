@@ -12,18 +12,19 @@ module Form526Workflow
   SUBMIT_FORM_526_JOB_CLASSES = %w[SubmitForm526AllClaim SubmitForm526].freeze
 
   class EvssSubmission
+    # Callback method called after RRD Sidekiq::Batch job succeeds in Form526Submission
+    def on_success(_status, options)
+      submission = Form526Submission.find(options['submission_id'])
+      self.class.start_evss_submission(submission)
+    end
+
     # Kicks off a 526 submit workflow batch. The first step in a submission workflow is to submit
     # an increase only or all claims form. Once the first job succeeds the batch will callback and run
     # one (cleanup job) or more ancillary jobs such as uploading supporting evidence or submitting ancillary forms.
     #
     # @return [String] the job id of the first job in the batch, i.e the 526 submit job
     #
-    def on_success(_status, options)
-      submission = Form526Submission.find(options['submission_id'])
-      self.class.start_evss_submission(submission)
-    end
-
-    # TODO: Rename this to `start`
+    # TODO: Rename this to `start` or `submit`
     def self.start_evss_submission(submission)
       workflow_batch = Sidekiq::Batch.new
       workflow_batch.on(
