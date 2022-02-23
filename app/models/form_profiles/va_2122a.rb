@@ -5,7 +5,7 @@ class FormProfiles::VA2122a < FormProfile
     {
       version: 0,
       prefill: true,
-      returnUrl: '/service-file-information'
+      returnUrl: '/view-change-representative/search/personal-information'
     }
   end
 end
