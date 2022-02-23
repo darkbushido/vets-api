@@ -19,6 +19,7 @@ class CreateForm1095Bs < ActiveRecord::Migration[6.1]
       t.integer :tax_year, null: false # validate that only one exists per vet, per year
       t.datetime :last_modified, null: false # , default: DateTime.now
       t.boolean :isCorrected, default: false
+      t.boolean :isBeneficiary, default: false
 
       t.timestamps
     end
