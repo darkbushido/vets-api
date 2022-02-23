@@ -77,7 +77,7 @@ class Form526Submission < ApplicationRecord
 
     self.birls_id = untried_birls_id
     save!
-    start_evss_submission(nil, { 'submission_id' => id })
+    EvssSubmission.start_evss_submission(self)
   rescue => e
     # 1) why have the 'silence_errors_and_log_to_sentry' option? (why not rethrow the error?)
     # This method is primarily intended to be triggered by a running Sidekiq job that has hit a dead end
