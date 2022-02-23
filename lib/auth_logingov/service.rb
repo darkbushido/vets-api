@@ -46,7 +46,28 @@ module AuthLogingov
       raise e
     end
 
+    def login_redirect_url(auth: 'success', code: nil)
+      if auth == 'success'
+        return "http://localhost:3001/auth/login/callback?type=logingov"
+      end
+
+      query_params = {}
+      query_params[:auth] = auth if auth != 'success'
+      query_params[:code] = code if code
+      add_query('http://localhost:3001/auth/login/callback', query_params)
+    end
+
     private
+
+    def add_query(url, params)
+      if params.any?
+        uri = URI.parse(url)
+        uri.query = Rack::Utils.parse_nested_query(uri.query).merge(params).to_query
+        uri.to_s
+      else
+        url
+      end
+    end
 
     def auth_url
       "#{config.base_path}/#{config.auth_path}"

@@ -17,12 +17,36 @@ module V2
       response = logingov_auth_service.token(params[:code])
       user_info = logingov_auth_service.user_info(response[:access_token])
       user_login(user_info)
+    rescue => e
+      handle_callback_error(e, :failure, :error)
     end
 
     private
 
+    def handle_callback_error(err, status, level = :error, code = SAML::Responses::Base::UNKNOWN_OR_BLANK_ERROR_CODE)
+      message = err&.message || ''
+      log_message_to_sentry(message, level)
+      redirect_to logingov_auth_service.login_redirect_url(auth: 'fail', code: code) unless performed?
+      # add login_stats/callback_stats/PersonalInformationLog
+    end
+
     def render_login
-      render body: logingov_auth_service.render_auth, content_type: 'text/html'
+      render body: auth_service.render_auth, content_type: 'text/html'
+    end
+
+    def auth_service
+      type = params[:type]
+      raise Common::Exceptions::RoutingError, type unless REDIRECT_URLS.include?(type)
+
+      case type
+      when 'idme'
+        idme_auth_service
+      when 'logingov'
+        logingov_auth_service
+      end
+    end
+
+    def idme_auth_service
     end
 
     def logingov_auth_service
@@ -58,7 +82,7 @@ module V2
       @current_user.save && @session_object.save && @user_identity.save
       set_cookies
       # after_login_actions
-      redirect_to "http://localhost:3001/auth/login/callback?type=logingov"
+      redirect_to logingov_auth_service.login_redirect_url(auth: 'success')
     end
 
     def set_cookies
