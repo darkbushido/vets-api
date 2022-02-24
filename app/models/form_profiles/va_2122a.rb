@@ -5,7 +5,7 @@ class FormProfiles::VA2122a < FormProfile
     {
       version: 0,
       prefill: true,
-      returnUrl: '/search/representative-type'
+      returnUrl: 'view-change-representative/search/representative-type'
     }
   end
 end
