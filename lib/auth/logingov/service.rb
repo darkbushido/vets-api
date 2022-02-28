@@ -49,13 +49,14 @@ module AuthLogingov
 
     def login_redirect_url(auth: 'success', code: nil)
       url_service = URLService.new
-      base_redirect = url_service.base_redirect_url
-      return "#{base_redirect}/auth/login/callback?type=logingov" unless auth != 'success'
-
       query_params = {}
-      query_params[:auth] = auth
-      query_params[:code] = code if code
-      add_query("#{base_redirect}/auth/login/callback", query_params)
+      if auth == 'success'
+        query_params[:type] = 'logingov'
+      else
+        query_params[:auth] = auth
+        query_params[:code] = code if code
+      end
+      add_query("#{url_service.base_redirect_url}/auth/login/callback", query_params)
     end
 
     def normalized_attributes(user_info)
