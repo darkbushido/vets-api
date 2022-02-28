@@ -57,6 +57,20 @@ module AuthLogingov
       add_query('http://localhost:3001/auth/login/callback', query_params)
     end
 
+    def normalized_attributes(user_info)
+      loa = user_info[:verified_at].nil? ? LOA::ONE : LOA::THREE
+      {
+        uuid: user_info[:sub],
+        loa: { current: loa, highest: loa },
+        ssn: user_info[:social_security_number].tr('-', ''),
+        birth_date: user_info[:birthdate],
+        first_name: user_info[:given_name],
+        last_name: user_info[:family_name],
+        email: user_info[:email],
+        sign_in: { service_name: 'logingov_direct' }
+      }
+    end
+
     private
 
     def add_query(url, params)
