@@ -384,12 +384,12 @@ Rails.application.routes.draw do
   namespace :v2, defaults: { format: 'json' } do
     resource :sessions, only: [] do
       get ':type/new',
-        to: 'sessions#new',
-        constraints: ->(request) { V2::SessionsController::REDIRECT_URLS.include?(request.path_parameters[:type]) }
+          to: 'sessions#new',
+          constraints: ->(request) { V2::SessionsController::REDIRECT_URLS.include?(request.path_parameters[:type]) }
       get ':type/callback',
-        to: 'sessions#callback',
-        constraints: ->(request) { V2::SessionsController::REDIRECT_URLS.include?(request.path_parameters[:type]) }
-      end
+          to: 'sessions#callback',
+          constraints: ->(request) { V2::SessionsController::REDIRECT_URLS.include?(request.path_parameters[:type]) }
+    end
   end
 
   root 'v0/example#index', module: 'v0'

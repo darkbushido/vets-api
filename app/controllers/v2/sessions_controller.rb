@@ -27,7 +27,7 @@ module V2
       render body: auth_service.render_auth, content_type: 'text/html'
     end
 
-    def handle_callback_error(err, status, level = :error, code = SAML::Responses::Base::UNKNOWN_OR_BLANK_ERROR_CODE)
+    def handle_callback_error(err, _status, level = :error, code = SAML::Responses::Base::UNKNOWN_OR_BLANK_ERROR_CODE)
       message = err&.message || ''
       log_message_to_sentry(message, level)
       redirect_to auth_service.login_redirect_url(auth: 'fail', code: code) unless performed?
@@ -73,6 +73,7 @@ module V2
     end
 
     def idme_auth_service
+      # @idme_auth_service ||= AuthIdme::Service.new
     end
 
     def logingov_auth_service
