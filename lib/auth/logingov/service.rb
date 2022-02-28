@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'uri'
+require 'auth/url_service'
 require 'auth/logingov/configuration'
 
 module AuthLogingov
@@ -47,14 +48,14 @@ module AuthLogingov
     end
 
     def login_redirect_url(auth: 'success', code: nil)
-      if auth == 'success'
-        return "http://localhost:3001/auth/login/callback?type=logingov"
-      end
+      url_service = URLService.new
+      base_redirect = url_service.base_redirect_url
+      return "#{base_redirect}/auth/login/callback?type=logingov" unless auth != 'success'
 
       query_params = {}
-      query_params[:auth] = auth if auth != 'success'
+      query_params[:auth] = auth
       query_params[:code] = code if code
-      add_query('http://localhost:3001/auth/login/callback', query_params)
+      add_query("#{base_redirect}/auth/login/callback", query_params)
     end
 
     def normalized_attributes(user_info)
