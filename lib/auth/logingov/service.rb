@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'uri'
-require 'auth_logingov/configuration'
+require 'auth/logingov/configuration'
 
 module AuthLogingov
   class Service < Common::Client::Base
@@ -11,7 +11,7 @@ module AuthLogingov
 
     def render_auth
       renderer = ActionController::Base.renderer
-      renderer.controller.prepend_view_path(Rails.root.join('lib', 'auth_logingov', 'templates'))
+      renderer.controller.prepend_view_path(Rails.root.join('lib', 'auth', 'logingov', 'templates'))
       renderer.render(template: 'logingov_get_form',
                       locals: {
                         url: auth_url,

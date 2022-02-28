@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'auth_logingov/service'
+require 'auth/logingov/service'
 
 module V2
   class SessionsController < ApplicationController
