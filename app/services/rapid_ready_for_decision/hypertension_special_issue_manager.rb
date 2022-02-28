@@ -9,8 +9,8 @@ module RapidReadyForDecision
     end
 
     def add_special_issue
-      submission_data = JSON.parse(submission.form_json)
-      disabilities = submission_data.dig('form526', 'form526', 'disabilities')
+      submission_data = JSON.parse(submission.form_json, symbolize_names: true)
+      disabilities = submission_data[:form526][:form526][:disabilities]
       disabilities.each do |disability|
         add_rrd_code(disability) if hypertension_increase?(disability)
       end
@@ -23,13 +23,16 @@ module RapidReadyForDecision
     RRD_CODE = 'RRD'
 
     def hypertension_increase?(disability)
-      RapidReadyForDecision::ProcessorSelector.disability_increase?(disability, HYPERTENSION_CODE)
+      # Does the same as RapidReadyForDecision::ProcessorSelector.disability_increase?(disability, HYPERTENSION_CODE)
+      # except using symbols as the keys instead of strings
+      disability[:diagnosticCode] == HYPERTENSION_CODE &&
+        disability[:disabilityActionType].downcase == 'increase'
     end
 
     # Must return an array containing special string codes for EVSS
     def add_rrd_code(disability)
-      disability['specialIssues'] ||= []
-      disability['specialIssues'].append(RRD_CODE) unless disability['specialIssues'].include?(RRD_CODE)
+      disability[:specialIssues] ||= []
+      disability[:specialIssues].append(RRD_CODE) unless disability[:specialIssues].include?(RRD_CODE)
       disability
     end
   end
