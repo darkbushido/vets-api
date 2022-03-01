@@ -37,7 +37,8 @@ RSpec.describe V0::Profile::PaymentHistoryController, type: :controller do
     end
 
     context 'when BGS::Services returns a Savon::SOAPFault' do
-      it 'returns both' do
+      # TODO(AJD): Look at raising a 502 here instead so we're not masking issues in BGS
+      it 'returns an empty list' do
         sign_in_as(user)
         allow_any_instance_of(BGS::Services).to receive(:payment_information).and_raise(Savon::SOAPFault)
         get(:index)
