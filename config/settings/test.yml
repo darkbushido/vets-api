@@ -18,6 +18,13 @@ reports:
     region: region
     secret_access_key: secret
 
+logingov:
+  client_id: urn:gov:gsa:openidconnect.profiles:sp:sso:va:dev_signin
+  redirect_uri: http://localhost:3000/v2/sessions/logingov/callback
+  client_cert_path: ~
+  client_key_path: ~
+  oauth_url: https://idp.int.identitysandbox.gov
+
 saml:
   cert_path: spec/support/certificates/ruby-saml.crt
   key_path: spec/support/certificates/ruby-saml.key

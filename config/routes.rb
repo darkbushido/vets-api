@@ -13,6 +13,13 @@ Rails.application.routes.draw do
       constraints: ->(request) { V1::SessionsController::REDIRECT_URLS.include?(request.path_parameters[:type]) }
   get '/v1/sessions/ssoe_logout', to: 'v1/sessions#ssoe_slo_callback'
 
+  get '/sign_in/:type/new',
+      to: 'sign_in#new',
+      constraints: ->(request) { SignInController::REDIRECT_URLS.include?(request.path_parameters[:type]) }
+  post '/sign_in/:type/callback',
+      to: 'sign_in#callback',
+      constraints: ->(request) { SignInController::REDIRECT_URLS.include?(request.path_parameters[:type]) }
+
   namespace :v0, defaults: { format: 'json' } do
     resources :onsite_notifications, only: %i[create index update]
 
@@ -379,17 +386,6 @@ Rails.application.routes.draw do
       get 'contestable_issues(/:benefit_type)', to: 'contestable_issues#index'
     end
     resources :higher_level_reviews, only: %i[create show]
-  end
-
-  namespace :v2, defaults: { format: 'json' } do
-    resource :sessions, only: [] do
-      get ':type/new',
-          to: 'sessions#new',
-          constraints: ->(request) { V2::SessionsController::REDIRECT_URLS.include?(request.path_parameters[:type]) }
-      get ':type/callback',
-          to: 'sessions#callback',
-          constraints: ->(request) { V2::SessionsController::REDIRECT_URLS.include?(request.path_parameters[:type]) }
-    end
   end
 
   root 'v0/example#index', module: 'v0'

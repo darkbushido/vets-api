@@ -1,18 +1,18 @@
 # frozen_string_literal: true
 
 require 'uri'
-require 'auth/url_service'
-require 'auth/logingov/configuration'
+require 'sign_in/url_service'
+require 'sign_in/logingov/configuration'
 
-module AuthLogingov
+module SignIn::Logingov
   class Service < Common::Client::Base
-    configuration AuthLogingov::Configuration
+    configuration SignIn::Logingov::Configuration
 
     SCOPE = 'profile email openid social_security_number'
 
     def render_auth
       renderer = ActionController::Base.renderer
-      renderer.controller.prepend_view_path(Rails.root.join('lib', 'auth', 'logingov', 'templates'))
+      renderer.controller.prepend_view_path(Rails.root.join('lib', 'sign_in', 'logingov', 'templates'))
       renderer.render(template: 'logingov_get_form',
                       locals: {
                         url: auth_url,
@@ -48,7 +48,7 @@ module AuthLogingov
     end
 
     def login_redirect_url(auth: 'success', code: nil)
-      url_service = URLService.new
+      url_service = SignIn::URLService.new
       query_params = {}
       if auth == 'success'
         query_params[:type] = 'logingov'
