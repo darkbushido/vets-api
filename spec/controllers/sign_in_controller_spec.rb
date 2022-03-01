@@ -3,14 +3,14 @@
 require 'rails_helper'
 require 'support/saml/form_validation_helpers'
 
-RSpec.describe V2::SessionsController, type: :controller do
+RSpec.describe SignInController, type: :controller do
   include SAML::ValidationHelpers
 
   context 'when not logged in' do
     describe 'GET new' do
       context 'routes not requiring auth' do
         %w[logingov].each do |type|
-          context "routes /sessions/#{type}/new to SessionsController#new with type: #{type}" do
+          context "routes /sign_in/#{type}/new to SignInController#new with type: #{type}" do
             let(:url) do
               case type
               when 'logingov'

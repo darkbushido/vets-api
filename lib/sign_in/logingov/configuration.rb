@@ -3,12 +3,12 @@
 require 'common/client/configuration/rest'
 require 'common/client/middleware/logging'
 
-module AuthLogingov
-  # Configuration for the AuthLogingov::Service. A singleton class that returns
+module SignIn::Logingov
+  # Configuration for the Logingov::Service. A singleton class that returns
   # a connection that can make signed requests
   #
   # @example set the configuration in the service
-  #   configuration AuthLogingov::Configuration
+  #   configuration Logingov::Configuration
   #
   class Configuration < Common::Client::Configuration::REST
     # Override the parent's base path
