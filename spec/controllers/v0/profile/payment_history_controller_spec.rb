@@ -35,5 +35,19 @@ RSpec.describe V0::Profile::PaymentHistoryController, type: :controller do
         end
       end
     end
+
+    context 'when BGS::Services returns a Savon::SOAPFault' do
+      it 'returns both' do
+        sign_in_as(user)
+        allow_any_instance_of(BGS::Services).to receive(:payment_information).and_raise(Savon::SOAPFault)
+        get(:index)
+
+        expect(response.code).to eq('200')
+        expect(response).to have_http_status(:ok)
+
+        expect(JSON.parse(response.body)['data']['attributes']['payments'].count).to eq(0)
+        expect(JSON.parse(response.body)['data']['attributes']['return_payments'].count).to eq(0)
+      end
+    end
   end
 end
