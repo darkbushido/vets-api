@@ -23,15 +23,24 @@ module BGS
     rescue Savon::Error, BGS::ShareError => e
       # BGS::ShareError is the base error class that the bgs-ext gem will return
       report_error(e)
+      return log_and_return_empty_response(e) if e.message.include?('No Data Found')
+      
       raise BGS::ServiceException.new('BGS_PAYMENT_HISTORY_502', { detail: e.message, source: self.class.name })
     rescue => e
       report_error(e)
-      return empty_response if e.message.include?('No Data Found')
+      return log_and_return_empty_response(e) if e.message.include?('No Data Found')
 
       raise e
     end
 
     private
+
+    def log_and_return_empty_response(error)
+      # it's unclear when or if this happens,
+      # logging the error class that has the message 'No Data Found'
+      Rails.logger.info('payment history no data found', { error_class: error.class.name })
+      empty_response
+    end
 
     def empty_response
       { payments: { payment: [] } }
