@@ -14,7 +14,8 @@ module BGS
       response
     rescue => e
       report_error(e)
-      empty_response if e.message.include?('No Data Found')
+      return empty_response if e.message.include?('No Data Found')
+      raise BGS::ServiceException.new('BGS_PAYMENT_HISTORY_502', source: self.class.name)
     end
 
     private
