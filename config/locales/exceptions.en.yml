@@ -618,7 +618,6 @@ en:
         <<: *external_defaults
         title: Bad Gateway
         code: 'BGS_PAYMENT_HISTORY_502'
-        detail: Received an an invalid response from the upstream server.
         status: 502
       BGS_RTG_502:
         <<: *external_defaults

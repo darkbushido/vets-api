@@ -36,10 +36,10 @@ RSpec.describe V0::Profile::PaymentHistoryController, type: :controller do
       end
     end
 
-    context 'when BGS::Services returns a Savon::SOAPFault' do
-      it 'returns a 502 and logs the original error' do
+    context 'when the payment service raises a Savon::Error (or its children SOAPFault etc.)' do
+      it 'returns a 502 with JSON API spec formatted error details' do
         sign_in_as(user)
-        allow_any_instance_of(BGS::Services).to receive(:payment_information).and_raise(Savon::SOAPFault)
+        allow_any_instance_of(BGS::Services).to receive(:payment_information).and_raise(Savon::Error)
 
         get(:index)
 
@@ -48,13 +48,56 @@ RSpec.describe V0::Profile::PaymentHistoryController, type: :controller do
                                              'errors' => [
                                                {
                                                  'title' => 'Bad Gateway',
-                                                 'detail' => 'Received an an invalid response from the upstream server.',
+                                                 'detail' => 'Savon::Error',
                                                  'code' => 'BGS_PAYMENT_HISTORY_502',
                                                  'source' => 'BGS::PaymentService',
                                                  'status' => '502'
                                                }
                                              ]
                                            })
+      end
+    end
+
+    context 'when the payment service raises a BGS::ShareError' do
+      it 'returns a 502 with JSON API spec formatted error details' do
+        sign_in_as(user)
+        allow_any_instance_of(BGS::Services).to receive(:payment_information).and_raise(BGS::ShareError.new(
+                                                                                          'bad news bears', 500
+                                                                                        ))
+
+        get(:index)
+
+        expect(response).to have_http_status(:bad_gateway)
+        expect(response.parsed_body).to eq({
+                                             'errors' => [
+                                               {
+                                                 'title' => 'Bad Gateway',
+                                                 'detail' => 'bad news bears',
+                                                 'code' => 'BGS_PAYMENT_HISTORY_502',
+                                                 'source' => 'BGS::PaymentService',
+                                                 'status' => '502'
+                                               }
+                                             ]
+                                           })
+      end
+    end
+
+    context 'when an unexpected error occurs' do
+      it 'returns a 500 with JSON API spec formatted error details' do
+        sign_in_as(user)
+        allow_any_instance_of(BGS::Services).to receive(:payment_information).and_raise(ArgumentError)
+
+        get(:index)
+
+        expect(response).to have_http_status(:internal_server_error)
+        expect(response.parsed_body['errors'].first).to include(
+          {
+            'title' => 'Internal server error',
+            'detail' => 'Internal server error',
+            'code' => '500',
+            'status' => '500'
+          }
+        )
       end
     end
   end
