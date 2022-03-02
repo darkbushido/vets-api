@@ -9,7 +9,7 @@ module Adapters
       @return_payments = []
 
       if input
-        @input_payments = [input[:payments][:payment]].flatten
+        @input_payments = [input.dig(:payments, :payment)].flatten
         payments, return_payments = @input_payments.partition do |payment|
           payment.dig(:return_payment, :check_trace_number).blank?
         end
