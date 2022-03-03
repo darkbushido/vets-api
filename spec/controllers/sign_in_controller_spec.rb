@@ -32,7 +32,7 @@ RSpec.describe SignInController, type: :controller do
       %w[logingov].each do |type|
         let(:ssl_key) { OpenSSL::PKey::RSA.new(File.read("spec/fixtures/sign_in/#{type}.key")) }
         let(:ssl_cert) { OpenSSL::X509::Certificate.new(File.read("spec/fixtures/sign_in/#{type}.crt")) }
-      
+
         before do
           allow(OpenSSL::PKey::RSA).to receive(:new).and_return(ssl_key)
           allow(OpenSSL::X509::Certificate).to receive(:new).and_return(ssl_cert)
