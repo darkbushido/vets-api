@@ -71,7 +71,7 @@ class SignInController < ApplicationController
   end
 
   def idme_auth_service
-    # @idme_auth_service ||= AuthIdme::Service.new
+    @idme_auth_service ||= SignIn::Idme::Service.new
   end
 
   def logingov_auth_service
