@@ -6,6 +6,8 @@ require 'evss/disability_compensation_form/form4142'
 require 'evss/disability_compensation_form/service'
 require 'evss/reference_data/service'
 require 'evss/reference_data/response_strategy'
+require 'lighthouse/benefits_reference_data/client'
+require 'lighthouse/benefits_reference_data/intake_sites_response'
 
 module V0
   class DisabilityCompensationFormsController < ApplicationController
@@ -19,12 +21,21 @@ module V0
     end
 
     def separation_locations
-      response = EVSS::ReferenceData::ResponseStrategy.new.cache_by_user_and_type(
-        :all_users,
-        :get_separation_locations
-      ) do
-        EVSS::ReferenceData::Service.new(@current_user).get_separation_locations
-      end
+      response = if Flipper.enabled?(:lighthouse_benefits_reference_data, current_user)
+                   Lighthouse::BenefitsReferenceData::IntakeSitesResponse.new.cache_by_user_and_type(
+                     :all_users,
+                     :get_separation_locations
+                   ) do
+                     Lighthouse::BenefitsReferenceData::Client.new(@current_user).get_separation_locations
+                   end
+                 else
+                   EVSS::ReferenceData::ResponseStrategy.new.cache_by_user_and_type(
+                     :all_users,
+                     :get_separation_locations
+                   ) do
+                     EVSS::ReferenceData::Service.new(@current_user).get_separation_locations
+                   end
+                 end
 
       render json: response, each_serializer: EVSSSeparationLocationSerializer
     end

@@ -3,6 +3,8 @@
 require 'evss/reference_data/service'
 require 'evss/pciu_address/service'
 require 'evss/pciu_address/response_strategy'
+require 'lighthouse/benefits_reference_data/client'
+require 'lighthouse/benefits_reference_data/response_strategy'
 
 module V0
   class AddressesController < ApplicationController
@@ -48,15 +50,23 @@ module V0
     private
 
     def service
-      if Settings.evss.reference_data_service&.enabled
-        EVSS::ReferenceData::Service.new(@current_user)
+      if Flipper.enabled?(:lighthouse_benefits_reference_data, current_user)
+        Lighthouse::BenefitsReferenceData::Client.new(@current_user)
       else
-        EVSS::PCIUAddress::Service.new(@current_user)
+        if Settings.evss.reference_data_service&.enabled
+          EVSS::ReferenceData::Service.new(@current_user)
+        else
+          EVSS::PCIUAddress::Service.new(@current_user)
+        end
       end
     end
 
     def strategy
-      EVSS::PCIUAddress::ResponseStrategy.new
+      if Flipper.enabled?(:lighthouse_benefits_reference_data, current_user)
+        Lighthouse::BenefitsReferenceData::ResponseStrategy.new
+      else
+        EVSS::PCIUAddress::ResponseStrategy.new
+      end
     end
   end
 end

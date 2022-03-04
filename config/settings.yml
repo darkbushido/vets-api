@@ -1024,6 +1024,15 @@ lighthouse:
   facilities:
     url: https://sandbox-api.va.gov
     api_key: fake_key
+  benefits_reference_data:
+    url: https://sandbox-api.va.gov
+    api_key: fake_key
+    countries:
+      url: "/services/benefits-reference-data/v1/countries"
+    states:
+      url: "/services/benefits-reference-data/v1/states"
+    intake_sites:
+      url: "/services/benefits-reference-data/v1/intake-sites"
 
 forms:
   url: https://sandbox-api.va.gov/services/va_forms/v0/

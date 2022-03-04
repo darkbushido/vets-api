@@ -1,0 +1,53 @@
+---
+http_interactions:
+- request:
+    method: get
+    uri: https://sandbox-api.va.gov/services/benefits-reference-data/v1/countries
+    body:
+      encoding: US-ASCII
+      string: ''
+    headers:
+      Accept:
+      - application/json
+      Content-Type:
+      - application/json
+      User-Agent:
+      - Vets.gov Agent
+      Apikey:
+      - "<LIGHTHOUSE_API_KEY>"
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
+  response:
+    status:
+      code: 401
+      message: Unauthorized
+    headers:
+      Date:
+      - Tue, 29 Mar 2022 23:06:53 GMT
+      Content-Type:
+      - application/json; charset=utf-8
+      Content-Length:
+      - '52'
+      Connection:
+      - keep-alive
+      Vary:
+      - Origin
+      Access-Control-Allow-Origin:
+      - "*"
+      X-Kong-Response-Latency:
+      - '0'
+      Cache-Control:
+      - ''
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Set-Cookie:
+      - TS01dd66bd=0119a2687f4cd5442f4a3c503227acb740b09e183d1b26126abde95c343e08b12e1b12cd79e6af67d015247857e7ed63ac7c7abc82;
+        Max-Age=900; Path=/
+    body:
+      encoding: UTF-8
+      string: |-
+        {
+          "message":"Invalid authentication credentials"
+        }
+  recorded_at: Tue, 29 Mar 2022 23:06:53 GMT
+recorded_with: VCR 6.1.0
