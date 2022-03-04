@@ -13,7 +13,7 @@ class Form1095B < ApplicationRecord
   # more validations
 
   # scopes
-  scopre :find_by_icn_and_year, -> (icn, year) {where("veteran_icn = ? and tax_year = ?", icn, year).first}
+  scope :find_by_icn_and_year, -> (icn, year) {where("veteran_icn = ? and tax_year = ?", icn, year).first}
 
   # assumes ssn is already last 4 if only 4 digits are provided
   before_save :store_last_4, if: -> { ssn.size == 9 }
