@@ -17,12 +17,13 @@ class CreateForm1095Bs < ActiveRecord::Migration[6.1]
       t.string :foreign_zip
       t.boolean :coverage_months, array:true, null: false
       t.integer :tax_year, null: false # validate that only one exists per vet, per year
-      t.datetime :last_modified, null: false # , default: DateTime.now
-      t.boolean :isCorrected, default: false
-      t.boolean :isBeneficiary, default: false
+      # t.datetime :last_modified, null: false # , default: DateTime.now
+      t.boolean :is_corrected, default: false
+      t.boolean :is_beneficiary, default: false
 
       t.timestamps
     end
-    add_index :form1095_bs, :veteran_icn
+
+    add_index :form1095_bs, [:veteran_icn, :tax_year], unique: true
   end
 end
