@@ -3,14 +3,10 @@
 require 'uri'
 require 'sign_in/url_service'
 require 'sign_in/idme/configuration'
-require 'sign_in/shared_service_behavior'
 
 module SignIn::Idme
   class Service < Common::Client::Base
-    include SignIn::SharedServiceBehavior
     configuration SignIn::Idme::Configuration
-
-    SCOPE = 'profile email openid social_security_number'
 
     def render_auth
       renderer = ActionController::Base.renderer
@@ -20,14 +16,11 @@ module SignIn::Idme
                         url: auth_url,
                         params:
                         {
-                          acr_values: LOA::IDME_LOA3,
+                          scope: LOA::IDME_LOA3,
                           client_id: config.client_id,
                           nonce: SecureRandom.hex,
-                          prompt: config.prompt,
                           redirect_uri: config.redirect_uri,
-                          response_type: config.response_type,
-                          scope: SCOPE,
-                          state: state
+                          response_type: config.response_type
                         }
                       },
                       format: :html)
@@ -57,6 +50,51 @@ module SignIn::Idme
         email: user_info[:email],
         sign_in: { service_name: 'idme_direct' }
       }
+    end
+
+    def token(code)
+      response = perform(
+        :post, config.token_path, token_params(code), { 'Content-Type' => 'application/json' }
+      )
+      response.body
+    rescue Common::Client::Errors::ClientError => e
+      raise e
+    end
+
+    def user_info(token)
+      response = perform(:get, config.userinfo_path, nil, { 'Authorization' => "Bearer #{token}" })
+      response.body
+    rescue Common::Client::Errors::ClientError => e
+      raise e
+    end
+
+    private
+
+    def add_query(url, params)
+      if params.any?
+        uri = URI.parse(url)
+        uri.query = Rack::Utils.parse_nested_query(uri.query).merge(params).to_query
+        uri.to_s
+      else
+        url
+      end
+    end
+
+    def auth_url
+      "#{config.base_path}/#{config.auth_path}"
+    end
+
+    def token_params(code)
+      {
+        grant_type: config.grant_type,
+        code: code,
+        client_id: config.client_id,
+        client_secret: config.client_secret
+      }.to_json
+    end
+
+    def nonce
+      @nonce ||= SecureRandom.hex
     end
   end
 end

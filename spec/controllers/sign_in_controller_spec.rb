@@ -16,7 +16,7 @@ RSpec.describe SignInController, type: :controller do
               when 'logingov'
                 'https://idp.int.identitysandbox.gov/openid_connect/authorize'
               when 'idme'
-                ''
+                'https://api.idmelabs.com/oauth/authorize'
               end
             end
 
