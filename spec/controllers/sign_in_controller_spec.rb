@@ -9,12 +9,14 @@ RSpec.describe SignInController, type: :controller do
   context 'when not logged in' do
     describe 'GET new' do
       context 'routes not requiring auth' do
-        %w[logingov].each do |type|
+        %w[logingov idme].each do |type|
           context "routes /sign_in/#{type}/new to SignInController#new with type: #{type}" do
             let(:url) do
               case type
               when 'logingov'
                 'https://idp.int.identitysandbox.gov/openid_connect/authorize'
+              when 'idme'
+                ''
               end
             end
 
@@ -29,7 +31,7 @@ RSpec.describe SignInController, type: :controller do
     end
 
     describe 'POST callback' do
-      %w[logingov].each do |type|
+      %w[logingov idme].each do |type|
         let(:ssl_key) { OpenSSL::PKey::RSA.new(File.read("spec/fixtures/sign_in/#{type}.key")) }
         let(:ssl_cert) { OpenSSL::X509::Certificate.new(File.read("spec/fixtures/sign_in/#{type}.crt")) }
 
