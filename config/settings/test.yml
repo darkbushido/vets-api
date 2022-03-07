@@ -20,7 +20,7 @@ reports:
 
 logingov:
   client_id: urn:gov:gsa:openidconnect.profiles:sp:sso:va:dev_signin
-  redirect_uri: http://localhost:3000/v2/sessions/logingov/callback
+  redirect_uri: http://localhost:3000/sign_in/logingov/callback
   client_cert_path: ~
   client_key_path: ~
   oauth_url: https://idp.int.identitysandbox.gov
