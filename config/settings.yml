@@ -884,6 +884,7 @@ flipper:
     - shefai.nayak@thoughtworks.com
     - ssuddath@governmentcio.com
     - stephen.barrs@gmail.com
+    - tim.wright@adhocteam.us
     - tony.williams@va.gov
     - travis.hilton@oddball.io
     - trevor.bosaw@oddball.io
@@ -908,6 +909,7 @@ flipper:
     - hocine.halli@accenturefederal.com
     - jacob.finnern@accenturefederal.com
     - brandon.clapp@accenturefederal.com
+    - trent.mcdole@gcio.com
 
 bgs:
   application: ~
@@ -1065,12 +1067,15 @@ vanotify:
         covid_vaccine_expanded_registration: fake_template_id
         direct_deposit_edu: edu_template_id
         direct_deposit_comp_pen: comp_pen_template_id
-        fsr_confirmation_email: fake_template_id
     lighthouse:
       api_key: fake_secret
       template_id:
         disconnection_template: fake_template_id
         connection_template: fake_template_id
+    dmc:
+      api_key: fake_secret
+      template_id:
+        fsr_confirmation_email: fake_template_id
   mock: false
   links:
     connected_applications: https://www.va.gov/profile/connected-applications
