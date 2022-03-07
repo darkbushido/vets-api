@@ -2,9 +2,12 @@
 
 require 'common/client/configuration/rest'
 require 'common/client/middleware/logging'
+require 'sign_in/shared_configuration'
 
 module SignIn::Idme
   class Configuration < Common::Client::Configuration::REST
+    include SignIn::SharedConfiguration
+
     def base_path
       Settings.idme.oauth_url
     end
@@ -23,6 +26,10 @@ module SignIn::Idme
 
     def client_cert_path
       Settings.idme.client_cert_path
+    end
+
+    def service_name
+      'Idme'
     end
   end
 end
