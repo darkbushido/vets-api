@@ -34,8 +34,8 @@ RSpec.describe SignInController, type: :controller do
         let(:ssl_cert) { OpenSSL::X509::Certificate.new(File.read("spec/fixtures/sign_in/#{type}.crt")) }
 
         before do
-          allow(OpenSSL::PKey::RSA).to receive(:new).and_return(ssl_key)
-          allow(OpenSSL::X509::Certificate).to receive(:new).and_return(ssl_cert)
+          allow_any_instance_of(SignIn::Logingov::Configuration).to receive(:ssl_key).and_return(ssl_key)
+          allow_any_instance_of(SignIn::Logingov::Configuration).to receive(:ssl_cert).and_return(ssl_cert)
         end
 
         context 'successful authentication' do
