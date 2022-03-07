@@ -25,6 +25,13 @@ logingov:
   client_key_path: ~
   oauth_url: https://idp.int.identitysandbox.gov
 
+idme:
+  client_id: dde0b5b8bfc023a093830e64ef83f148
+  redirect_uri: http://localhost:3000/v2/sessions/idme/callback
+  client_cert_path: ~
+  client_key_path: ~
+  oauth_url: https://api.idmelabs.com/oauth/authorize?client_id=dde0b5b8bfc023a093830e64ef83f148&redirect_uri=http://localhost:3000/v2/sessions/callback&response_type=code&scope=http://idmanagement.gov/ns/assurance/loa/3
+
 saml:
   cert_path: spec/support/certificates/ruby-saml.crt
   key_path: spec/support/certificates/ruby-saml.key
