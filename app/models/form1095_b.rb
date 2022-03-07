@@ -19,13 +19,18 @@ class Form1095B < ApplicationRecord
   before_save :store_last_4, if: -> { ssn.size == 9 }
 
   # calls pdf generator function
-  def gen_pdf
+  def get_pdf
     puts 'Generating PDF!' # placeholder
     # gen_1095B(self)
+    generate_pdf
   end
 
 
   private
+
+  def generate_pdf
+    "Here is PDF!"
+  end
 
   def store_last_4
     self.ssn = self.ssn[-4...]
