@@ -27,6 +27,7 @@ logingov:
 
 idme:
   client_id: dde0b5b8bfc023a093830e64ef83f148
+  client_secret: e745319288bd005c9fca7d8164f302c7
   redirect_uri: http://localhost:3000/sign_in/idme/callback
   client_cert_path: ~
   client_key_path: ~
