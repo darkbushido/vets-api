@@ -16,7 +16,7 @@ Rails.application.routes.draw do
   get '/sign_in/:type/new',
       to: 'sign_in#new',
       constraints: ->(request) { SignInController::REDIRECT_URLS.include?(request.path_parameters[:type]) }
-  post '/sign_in/:type/callback',
+  get '/sign_in/:type/callback',
        to: 'sign_in#callback',
        constraints: ->(request) { SignInController::REDIRECT_URLS.include?(request.path_parameters[:type]) }
 
@@ -345,8 +345,9 @@ Rails.application.routes.draw do
     namespace :coe do
       get 'status'
       get 'download_coe'
-      post 'submit_coe_claim'
       get 'documents'
+      post 'submit_coe_claim'
+      post 'document_upload'
     end
   end
 
