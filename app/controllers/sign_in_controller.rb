@@ -22,7 +22,7 @@ class SignInController < ApplicationController
 
   private
 
-  def handle_callback_error(err, _status, level = :error, code = SAML::Responses::Base::UNKNOWN_OR_BLANK_ERROR_CODE)
+  def handle_callback_error(err, _status, level = :error, code = SignIn::Errors::ERROR_CODES[:unknown])
     message = err&.message || ''
     log_message_to_sentry(message, level)
     redirect_to auth_service.login_redirect_url(auth: 'fail', code: code) unless performed?
