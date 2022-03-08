@@ -13,6 +13,10 @@ module SignIn::Idme
       Settings.idme.client_id
     end
 
+    def client_secret
+      Settings.idme.client_secret
+    end
+
     def redirect_uri
       Settings.idme.redirect_uri
     end
