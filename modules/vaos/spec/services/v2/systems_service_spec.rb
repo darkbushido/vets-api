@@ -9,6 +9,8 @@ describe VAOS::V2::SystemsService do
 
   before { allow_any_instance_of(VAOS::UserService).to receive(:session).and_return('stubbed_token') }
 
+  # TODO: verify clinics calls
+
   describe '#get_facility_clinics' do
     context 'with 7 clinics' do
       it 'returns an array of size 7' do
