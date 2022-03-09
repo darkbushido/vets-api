@@ -33,7 +33,7 @@ RSpec.describe Form526Submission do
     context 'when it is all claims' do
       it 'queues an all claims job' do
         expect do
-          subject.start_evss_submission(nil, 'submission_id' => subject.id)
+          subject.start_evss_submission_job
         end.to change(EVSS::DisabilityCompensationForm::SubmitForm526AllClaim.jobs, :size).by(1)
       end
     end
@@ -65,11 +65,11 @@ RSpec.describe Form526Submission do
         it_behaves_like '#start_evss_submission'
 
         context 'an exception is raised in the start method' do
-          it 'runs start_evss_submission' do
+          it 'calls start_evss_submission_job' do
             allow(Sidekiq::Batch).to receive(:new).and_raise(NoMethodError)
 
             expect(Rails.logger).to receive(:error)
-            expect(form_for_hypertension).to receive(:start_evss_submission)
+            expect(form_for_hypertension).to receive(:start_evss_submission_job)
             form_for_hypertension.start
           end
         end
@@ -100,7 +100,7 @@ RSpec.describe Form526Submission do
     end
   end
 
-  describe '#start_evss_submission' do
+  describe '#start_evss_submission_job' do
     it_behaves_like '#start_evss_submission'
   end
 
@@ -608,7 +608,10 @@ RSpec.describe Form526Submission do
     context 'when the first name is NOT populated on the User' do
       before do
         # Ensure `subject` is called before stubbing `first_name` so that the auth headers are populated correctly
-        allow(User.find(subject.user_uuid)).to receive(:first_name).and_return nil
+        subject
+        user_with_nil_first_name = User.create(user)
+        allow(user_with_nil_first_name).to receive(:first_name).and_return nil
+        allow(User).to receive(:find).with(subject.user_uuid).and_return user_with_nil_first_name
       end
 
       context 'when name attributes exist in the auth headers' do

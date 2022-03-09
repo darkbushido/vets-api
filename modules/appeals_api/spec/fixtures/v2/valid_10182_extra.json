@@ -9,9 +9,9 @@
           "addressLine2": "Suite #1200",
           "addressLine3": "Box 4",
           "city": "North Pole",
-          "countryName": "Canada",
+          "countryCodeISO2": "CA",
           "zipCode5": "00000",
-          "internationalPostalCode": "H0H 0H0"
+          "internationalPostalCode": "A1B 23C"
         },
         "phone": {
           "countryCode": "6",
@@ -23,14 +23,7 @@
         "timezone": "America/Chicago"
       },
       "representative": {
-        "name": "Tony Danza",
-        "phone": {
-          "countryCode": "1",
-          "areaCode": "444",
-          "phoneNumber": "110222",
-          "phoneNumberExt": "9"
-        },
-        "email": "represent@rep.com"
+        "name": "Tony Danza"
       },
       "boardReviewOption": "hearing",
       "hearingTypePreference": "central_office",
@@ -66,7 +59,8 @@
         "issue": "123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789x",
         "decisionDate": "1900-01-03",
         "ratingIssueReferenceId": "6",
-        "ratingDecisionReferenceId": "7"
+        "ratingDecisionReferenceId": "7",
+        "disagreementArea": "Service"
       }
     },
     {
@@ -90,7 +84,8 @@
       "type": "contestableIssue",
       "attributes": {
         "issue": "right shoulder",
-        "decisionDate": "1900-01-06"
+        "decisionDate": "1900-01-06",
+        "disagreementArea": "Effective Date"
       }
     }
   ]

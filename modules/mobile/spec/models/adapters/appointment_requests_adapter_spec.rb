@@ -321,18 +321,28 @@ describe Mobile::V0::Adapters::AppointmentRequests do
     end
 
     describe 'location' do
-      it 'sets name, address, and phone' do
+      it 'sets name and address' do
         expected_location = {
           id: nil,
           name: 'Test clinic 2',
           address: { street: '123 Sesame St.', city: 'Cheyenne', state: 'VA', zip_code: '20171' },
           lat: nil,
           long: nil,
-          phone: { area_code: '703', number: '652-0000', extension: nil },
+          phone: nil,
           url: nil,
           code: nil
         }
         expect(adapted_cc_appt_request.location.to_h).to eq(expected_location)
+      end
+    end
+
+    describe 'error handling' do
+      it 'catches and logs any adaption errors and omits the problem record from the results' do
+        allow_any_instance_of(Mobile::V0::Templates::CommunityCareAppointment)
+          .to receive(:appointment).and_raise(StandardError)
+        expect(Rails.logger).to receive(:error).with('Error adapting appointment request', any_args)
+        expect(cc_appointment_requests).to eq([])
+        expect(va_appointment_requests).to eq([adapted_va_appt_request])
       end
     end
   end

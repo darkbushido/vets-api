@@ -93,11 +93,11 @@ salesforce:
 form_10_10cg:
   carma:
     mulesoft:
-      mock: true
-      host: "https://fake-mulesoft.vapi.va.gov"
-      client_id: BEEFCAFE1234
-      client_secret: C0FFEEFACE4321
-      timeout: 10
+      mock: false
+      host: ~
+      client_id: ~
+      client_secret: ~
+      timeout: 30
   poa:
     s3:
       aws_access_key_id: my-aws-key-id
@@ -790,11 +790,13 @@ flipper:
     - adrian.rollett@agile6.com # Adrian Rollett (Agile6), Engineer/Product Manager Health Care Experience/Check-In
     - agarcia@clarityinnovates.com
     - alastair@adhocteam.us
+    - andrew.herzberg@adhocteam.us
     - bill.ryan@adhocteam.us
     - bradley.gross@b3groupinc.com
     - brian.seek@civicactions.com # Brian Seek (Civic Actions), FE Engineer Health Care Experience/Check-In
     - clark@governmentcio.com # Designer on GCIO
     - cameron@oddball.io
+    - chika.adibemma@adhocteam.us
     - corey.parker@gcio.com # Corey Parker (GCIO), Product Manager Health Care Experience/Check-In
     - cory.trimm@va.gov
     - craig.wheeler@gcio.com
@@ -817,6 +819,7 @@ flipper:
     - jacob.gacek@thoughtworks.com
     - james.childers@gcio.com
     - james.adams2@va.gov # Jim Adams designer on GCIO
+    - jayson.perkins@adhocteam.us
     - jeff.roof@adhocteam.us
     - jennie.mcgibney@va.gov
     - jesse.cohn@adhocteam.us
@@ -834,6 +837,7 @@ flipper:
     - kenneth.santiago2010@gmail.com
     - kevin.musiorski@gcio.com # Kevin Musiorski (GCIO), Engineer
     - kmircovich@governmentcio.com
+    - kris.pethtel@adhocteam.us
     - kyle.woolley@oddball.io # VSP Identity Engineer
     - ksuriyamoorthy@kindsys.us # Kanchana Suriyamoorthy (Kindsys), BE Engineer Health Care Experience/Check-In
     - lauren.alexanderson@va.gov
@@ -873,6 +877,7 @@ flipper:
     - shefai.nayak@thoughtworks.com
     - ssuddath@governmentcio.com
     - stephen.barrs@gmail.com
+    - tim.wright@adhocteam.us
     - tony.williams@va.gov
     - travis.hilton@oddball.io
     - trevor.bosaw@oddball.io
@@ -897,6 +902,8 @@ flipper:
     - hocine.halli@accenturefederal.com
     - jacob.finnern@accenturefederal.com
     - brandon.clapp@accenturefederal.com
+    - matt.long@adhocteam.us # Matt Long - Staff Software Engineer - Ad Hoc
+    - trent.mcdole@gcio.com
 
 bgs:
   application: ~
@@ -1054,12 +1061,15 @@ vanotify:
         covid_vaccine_expanded_registration: fake_template_id
         direct_deposit_edu: edu_template_id
         direct_deposit_comp_pen: comp_pen_template_id
-        fsr_confirmation_email: fake_template_id
     lighthouse:
       api_key: fake_secret
       template_id:
         disconnection_template: fake_template_id
         connection_template: fake_template_id
+    dmc:
+      api_key: fake_secret
+      template_id:
+        fsr_confirmation_email: fake_template_id
   mock: false
   links:
     connected_applications: https://www.va.gov/profile/connected-applications
