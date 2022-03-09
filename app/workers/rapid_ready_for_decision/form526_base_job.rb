@@ -55,6 +55,7 @@ module RapidReadyForDecision
     end
 
     class AccountNotFoundError < StandardError; end
+    class MultipleIcnsFound < StandardError; end
 
     private
 
@@ -83,6 +84,14 @@ module RapidReadyForDecision
       account_record = account(form526_submission)
       raise AccountNotFoundError, "for user_uuid: #{form526_submission.user_uuid} or their edipi" unless account_record
 
+      if account_record.is_a?(Array)
+        # The multiple Account records should have the same ICN
+        icns = account_record.pluck(:icn).uniq
+        raise MultipleIcnsFound, "for the user '#{form526_submission.user_uuid}': #{icns}" if icns.size > 1
+
+        return icns.first
+      end
+
       account_record.icn.presence
     end
 
@@ -92,7 +101,16 @@ module RapidReadyForDecision
       # rubocop:disable Lint/UselessAssignment
       account = Account.find_by(idme_uuid: user_uuid) if user_uuid
       account ||= Account.find_by(logingov_uuid: user_uuid) if user_uuid
-      account ||= Account.find_by(edipi: edipi) if edipi
+
+      # There's no DB constraint that guarantees uniqueness of edipi, so return an array if there are multiple Accounts
+      account ||= if edipi
+                    accounts = Account.where(edipi: edipi).to_a
+                    if accounts.size == 1
+                      accounts.first
+                    elsif accounts.size > 1
+                      accounts
+                    end
+                  end
       # rubocop:enable Lint/UselessAssignment
     end
 

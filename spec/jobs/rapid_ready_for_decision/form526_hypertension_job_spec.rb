@@ -151,6 +151,32 @@ RSpec.describe RapidReadyForDecision::Form526HypertensionJob, type: :worker do
           end.not_to raise_error
         end
       end
+
+      context 'if there are multiple Account records with the same edipi' do
+        let(:account2_icn) { "#{user.account.icn}_different" }
+
+        before { create(:account, edipi: user.account.edipi, icn: account2_icn) }
+
+        it 'raises error' do
+          Sidekiq::Testing.inline! do
+            expect do
+              subject.perform_async(submission_without_account.id)
+            end.to raise_error RapidReadyForDecision::Form526BaseJob::MultipleIcnsFound
+          end
+        end
+
+        context 'with the same icn' do
+          let(:account2_icn) { user.account.icn }
+
+          it 'finishes successfully' do
+            Sidekiq::Testing.inline! do
+              expect do
+                subject.perform_async(submission_without_account.id)
+              end.not_to raise_error
+            end
+          end
+        end
+      end
     end
 
     context 'when an account for the user is NOT found' do
