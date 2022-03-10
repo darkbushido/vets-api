@@ -659,3 +659,8 @@ features:
   check_va_inbox_enabled:
     actor_type: user
     description: Enables check inbox link
+  lighthouse_benefits_reference_data:
+    actor_type: user
+    description: Enables switching between Lighthouse::BenefitsReferenceData and EVSS::ReferenceData APIs
+    enable_in_development: true
+
