@@ -46,46 +46,46 @@ module SignIn::Idme
     end
 
     def client_assertion_type
-    'urn:ietf:params:oauth:client-assertion-type:jwt-bearer'
-  end
-
-  def grant_type
-    'authorization_code'
-  end
-
-  def client_assertion_expiration_seconds
-    1000
-  end
-
-  def response_type
-    'code'
-  end
-
-  def ssl_key
-    OpenSSL::PKey::RSA.new(File.read(client_key_path))
-  end
-
-  def ssl_cert
-    OpenSSL::X509::Certificate.new(File.read(client_cert_path))
-  end
-
-  # Faraday connection object with breakers, snakecase and json response middleware
-  # @return Faraday::Connection connection to make http calls
-  #
-  def connection
-    @connection ||= Faraday.new(
-      base_path,
-      headers: base_request_headers,
-      request: request_options,
-      ssl: { client_cert: ssl_cert,
-             client_key: ssl_key }
-    ) do |conn|
-      conn.use :breakers
-      conn.use Faraday::Response::RaiseError
-      conn.response :snakecase
-      conn.response :json, content_type: /\bjson$/
-      conn.adapter Faraday.default_adapter
+      'urn:ietf:params:oauth:client-assertion-type:jwt-bearer'
     end
-  end
+
+    def grant_type
+      'authorization_code'
+    end
+
+    def client_assertion_expiration_seconds
+      1000
+    end
+
+    def response_type
+      'code'
+    end
+
+    def ssl_key
+      OpenSSL::PKey::RSA.new(File.read(client_key_path))
+    end
+
+    def ssl_cert
+      OpenSSL::X509::Certificate.new(File.read(client_cert_path))
+    end
+
+    # Faraday connection object with breakers, snakecase and json response middleware
+    # @return Faraday::Connection connection to make http calls
+    #
+    def connection
+      @connection ||= Faraday.new(
+        base_path,
+        headers: base_request_headers,
+        request: request_options,
+        ssl: { client_cert: ssl_cert,
+               client_key: ssl_key }
+      ) do |conn|
+        conn.use :breakers
+        conn.use Faraday::Response::RaiseError
+        conn.response :snakecase
+        conn.response :json, content_type: /\bjson$/
+        conn.adapter Faraday.default_adapter
+      end
+    end
   end
 end
