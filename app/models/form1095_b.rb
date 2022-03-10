@@ -72,8 +72,8 @@ class Form1095B < ApplicationRecord
      client_file_name = '1095B.pdf'
      file_contents = File.read(source_file_path)
     
-     #TODO: why do we need this line if its just deleting the pdf reference we need? 
-     #File.delete(source_file_path) 
+     #during testing make sure this line does not delete the file that is used as the template
+     File.delete(source_file_path) 
 
       send_data file_contents, filename: client_file_name, type: 'application/pdf', disposition: 'attachment'
   end
