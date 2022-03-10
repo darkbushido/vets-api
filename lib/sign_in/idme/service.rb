@@ -16,7 +16,7 @@ module SignIn::Idme
                         url: auth_url,
                         params:
                         {
-                          scope: IDME_LOA3,
+                          scope: LOA::IDME_LOA3,
                           client_id: config.client_id,
                           nonce: SecureRandom.hex,
                           redirect_uri: config.redirect_uri,
