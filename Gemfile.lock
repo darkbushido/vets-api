@@ -269,7 +269,7 @@ GEM
     crack (0.4.5)
       rexml
     crass (1.0.6)
-    danger (8.4.4)
+    danger (8.4.5)
       claide (~> 1.0)
       claide-plugins (>= 0.9.2)
       colored2 (~> 3.1)
@@ -727,7 +727,7 @@ GEM
       ffi (~> 1.0)
     rchardet (1.8.0)
     redis (4.6.0)
-    redis-namespace (1.8.1)
+    redis-namespace (1.8.2)
       redis (>= 3.0.4)
     regexp_parser (2.2.1)
     representable (3.1.1)
