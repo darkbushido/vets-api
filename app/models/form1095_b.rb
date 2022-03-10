@@ -30,7 +30,7 @@ class Form1095B < ApplicationRecord
   private
 
   def generate_pdf
-    "Here is PDF!"
+    puts "Here is PDF!" # placeholder for testing
     PDF_FORMS = PdfForms.new(Settings.binaries.pdftk)
 
     PDF_FORMS.fill_form(
