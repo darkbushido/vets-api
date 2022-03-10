@@ -30,16 +30,8 @@ RSpec.describe SignInController, type: :controller do
       end
     end
 
-    describe 'POST callback' do
+    describe 'GET callback' do
       %w[logingov idme].each do |type|
-        let(:ssl_key) { OpenSSL::PKey::RSA.new(File.read("spec/fixtures/sign_in/#{type}.key")) }
-        let(:ssl_cert) { OpenSSL::X509::Certificate.new(File.read("spec/fixtures/sign_in/#{type}.crt")) }
-
-        before do
-          allow_any_instance_of(SignIn::Logingov::Configuration).to receive(:ssl_key).and_return(ssl_key)
-          allow_any_instance_of(SignIn::Logingov::Configuration).to receive(:ssl_cert).and_return(ssl_cert)
-        end
-
         context 'successful authentication' do
           it 'redirects user to home page' do
             VCR.use_cassette("identity/#{type}_200_responses") do

@@ -18,7 +18,7 @@ module SignIn::Idme
                         {
                           scope: LOA::IDME_LOA3,
                           client_id: config.client_id,
-                          nonce: SecureRandom.hex,
+                          # nonce: SecureRandom.hex,
                           redirect_uri: config.redirect_uri,
                           response_type: config.response_type
                         }
@@ -89,7 +89,8 @@ module SignIn::Idme
         grant_type: config.grant_type,
         code: code,
         client_id: config.client_id,
-        client_secret: config.client_secret
+        client_secret: config.client_secret,
+        redirect_uri: config.redirect_uri
       }.to_json
     end
 
