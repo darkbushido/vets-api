@@ -31,6 +31,22 @@ module SignIn::Logingov
                       format: :html)
     end
 
+    def token(code)
+      response = perform(
+        :post, config.token_path, token_params(code), { 'Content-Type' => 'application/json' }
+      )
+      response.body
+    rescue Common::Client::Errors::ClientError => e
+      raise e
+    end
+
+    def user_info(token)
+      response = perform(:get, config.userinfo_path, nil, { 'Authorization' => "Bearer #{token}" })
+      response.body
+    rescue Common::Client::Errors::ClientError => e
+      raise e
+    end
+
     def login_redirect_url(auth: 'success', code: nil)
       url_service = SignIn::URLService.new
       query_params = {}
@@ -55,22 +71,6 @@ module SignIn::Logingov
         email: user_info[:email],
         sign_in: { service_name: 'logingov_direct' }
       }
-    end
-
-    def token(code)
-      response = perform(
-        :post, config.token_path, token_params(code), { 'Content-Type' => 'application/json' }
-      )
-      response.body
-    rescue Common::Client::Errors::ClientError => e
-      raise e
-    end
-
-    def user_info(token)
-      response = perform(:get, config.userinfo_path, nil, { 'Authorization' => "Bearer #{token}" })
-      response.body
-    rescue Common::Client::Errors::ClientError => e
-      raise e
     end
 
     private

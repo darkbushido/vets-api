@@ -21,16 +21,16 @@ reports:
 logingov:
   client_id: urn:gov:gsa:openidconnect.profiles:sp:sso:va:dev_signin
   redirect_uri: http://localhost:3000/sign_in/logingov/callback
-  client_cert_path: ~
-  client_key_path: ~
+  client_cert_path: spec/fixtures/sign_in/logingov.crt
+  client_key_path: spec/fixtures/sign_in/logingov.key
   oauth_url: https://idp.int.identitysandbox.gov
 
 idme:
   client_id: dde0b5b8bfc023a093830e64ef83f148
   client_secret: e745319288bd005c9fca7d8164f302c7
   redirect_uri: http://localhost:3000/sign_in/idme/callback
-  client_cert_path: ~
-  client_key_path: ~
+  client_cert_path: spec/fixtures/sign_in/idme.crt
+  client_key_path: spec/fixtures/sign_in/idme.key
   oauth_url: https://api.idmelabs.com
 
 saml:
@@ -40,6 +40,9 @@ saml:
 saml_ssoe:
   cert_path: spec/support/certificates/ruby-saml.crt
   key_path: spec/support/certificates/ruby-saml.key
+
+sign_in:
+  jwt_encode_key: 'spec/fixtures/sign_in/privatekey.pem'
 
 edu:
   prefill: true
@@ -272,3 +275,12 @@ lgy:
   base_url: https://fake_url.com
   app_id: fake_app_id
   api_key: fake_api_key
+
+form_10_10cg:
+  carma:
+    mulesoft:
+      mock: true
+      host: "https://fake-mulesoft.vapi.va.gov"
+      client_id: BEEFCAFE1234
+      client_secret: C0FFEEFACE4321
+      timeout: 10

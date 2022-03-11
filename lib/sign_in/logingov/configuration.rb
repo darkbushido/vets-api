@@ -34,28 +34,6 @@ module SignIn::Logingov
       Settings.logingov.client_cert_path
     end
 
-    def auth_path
-      'openid_connect/authorize'
-    end
-
-    def prompt
-      'select_account'
-    end
-
-    def token_path
-      'api/openid_connect/token'
-    end
-
-    def userinfo_path
-      'api/openid_connect/userinfo'
-    end
-
-    # Service name for breakers integration
-    # @return String the service name
-    def service_name
-      'Logingov'
-    end
-
     def client_assertion_type
       'urn:ietf:params:oauth:client-assertion-type:jwt-bearer'
     end
@@ -68,8 +46,24 @@ module SignIn::Logingov
       1000
     end
 
+    def prompt
+      'select_account'
+    end
+
     def response_type
       'code'
+    end
+
+    def auth_path
+      'openid_connect/authorize'
+    end
+
+    def token_path
+      'api/openid_connect/token'
+    end
+
+    def userinfo_path
+      'api/openid_connect/userinfo'
     end
 
     def ssl_key
@@ -78,6 +72,12 @@ module SignIn::Logingov
 
     def ssl_cert
       OpenSSL::X509::Certificate.new(File.read(client_cert_path))
+    end
+
+    # Service name for breakers integration
+    # @return String the service name
+    def service_name
+      'Logingov'
     end
 
     # Faraday connection object with breakers, snakecase and json response middleware

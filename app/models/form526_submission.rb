@@ -155,10 +155,18 @@ class Form526Submission < ApplicationRecord
     }
   end
 
+  # form_json is memoized here so call invalidate_form_hash after updating form_json
   # @return [Hash] parsed version of the form json
   #
   def form
     @form_hash ||= JSON.parse(form_json)
+  end
+
+  # Call this method to invalidate the memoized @form_hash variable after updating form_json.
+  # A hook that calls this method could be added so that we don't have to call this manually,
+  # see https://stackoverflow.com/questions/24314584/run-a-callback-only-if-an-attribute-has-changed-in-rails
+  def invalidate_form_hash
+    remove_instance_variable(:@form_hash) if instance_variable_defined?(:@form_hash)
   end
 
   # A 526 submission can include the 526 form submission, uploads, and ancillary items.
@@ -314,20 +322,19 @@ class Form526Submission < ApplicationRecord
   #
   def workflow_complete_handler(_status, options)
     submission = Form526Submission.find(options['submission_id'])
+    params = submission.personalization_parameters(options['first_name'])
     if submission.jobs_succeeded?
-      Form526ConfirmationEmailJob.perform_async(personalization_parameters(options['first_name']))
+      Form526ConfirmationEmailJob.perform_async(params)
       submission.workflow_complete = true
       submission.save
     else
-      Form526SubmissionFailedEmailJob.perform_async(personalization_parameters(options['first_name']))
+      Form526SubmissionFailedEmailJob.perform_async(params)
     end
   end
 
   def bdd?
     form.dig('form526', 'form526', 'bddQualified') || false
   end
-
-  private
 
   def personalization_parameters(first_name)
     {
@@ -337,6 +344,8 @@ class Form526Submission < ApplicationRecord
       'first_name' => first_name
     }
   end
+
+  private
 
   def submit_uploads
     # Put uploads on a one minute delay because of shared workload with EVSS

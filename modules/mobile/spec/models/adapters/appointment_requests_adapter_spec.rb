@@ -48,14 +48,21 @@ describe Mobile::V0::Adapters::AppointmentRequests do
 
   describe 'unused fields' do
     it 'returns them as nils' do
-      cancel_id = all_appointment_requests.map(&:cancel_id).uniq
       comment = all_appointment_requests.map(&:comment).uniq
       sta6aid = all_appointment_requests.map(&:sta6aid).uniq
       minutes_duration = all_appointment_requests.map(&:minutes_duration).uniq
       vetext_id = all_appointment_requests.map(&:vetext_id).uniq
       is_covid_vaccine = all_appointment_requests.map(&:is_covid_vaccine).uniq
 
-      expect([cancel_id, comment, sta6aid, minutes_duration, vetext_id, is_covid_vaccine]).to all(eq([nil]))
+      expect([comment, sta6aid, minutes_duration, vetext_id, is_covid_vaccine]).to all(eq([nil]))
+    end
+  end
+
+  describe 'cancel_id' do
+    it 'is appointment id' do
+      ids = all_appointment_requests.map(&:id)
+      cancel_ids = all_appointment_requests.map(&:cancel_id)
+      expect(ids).to eq(cancel_ids)
     end
   end
 
@@ -321,45 +328,18 @@ describe Mobile::V0::Adapters::AppointmentRequests do
     end
 
     describe 'location' do
-      it 'sets name, address, and phone' do
+      it 'sets name and address' do
         expected_location = {
           id: nil,
           name: 'Test clinic 2',
           address: { street: '123 Sesame St.', city: 'Cheyenne', state: 'VA', zip_code: '20171' },
           lat: nil,
           long: nil,
-          phone: { area_code: '703', number: '652-0000', extension: 'x1000' },
+          phone: nil,
           url: nil,
           code: nil
         }
         expect(adapted_cc_appt_request.location.to_h).to eq(expected_location)
-      end
-
-      it 'handles nil phone numbers' do
-        cc_request_data.phone_number = nil
-        _, cc_results = subject.parse([cc_request_data])
-        appt_request = cc_results.first
-        expected_phone = { area_code: nil, number: nil, extension: nil }
-
-        expect(appt_request.location.phone.to_h).to eq(expected_phone)
-      end
-
-      it 'handles blank phone numbers' do
-        cc_request_data.phone_number = ''
-        _, cc_results = subject.parse([cc_request_data])
-        appt_request = cc_results.first
-        expected_phone = { area_code: nil, number: nil, extension: nil }
-
-        expect(appt_request.location.phone.to_h).to eq(expected_phone)
-      end
-
-      it 'handles bad phone numbers' do
-        cc_request_data.phone_number = 'NaN'
-        _, cc_results = subject.parse([cc_request_data])
-        appt_request = cc_results.first
-        expected_phone = { area_code: nil, number: nil, extension: nil }
-
-        expect(appt_request.location.phone.to_h).to eq(expected_phone)
       end
     end
 

@@ -23,7 +23,6 @@ idme:
   client_key_path: spec/fixtures/sign_in/idme.key
   oauth_url: https://api.idmelabs.com
 
-
 # Settings for new SAML authentication with SSOe
 saml_ssoe:
   idp_metadata_file: config/ssoe_idp_int_metadata_isam.xml
@@ -46,6 +45,9 @@ ssoe_eauth_cookie:
 
 session_cookie:
   secure: false
+
+sign_in:
+  jwt_encode_key: 'spec/fixtures/sign_in/privatekey.pem'
 
 lockbox:
   master_key: "0d78eaf0e90d4e7b8910c9112e16e66d8b00ec4054a89aa426e32712a13371e9"
@@ -109,11 +111,11 @@ salesforce:
 form_10_10cg:
   carma:
     mulesoft:
-      mock: true
-      host: "https://fake-mulesoft.vapi.va.gov"
-      client_id: BEEFCAFE1234
-      client_secret: C0FFEEFACE4321
-      timeout: 10
+      mock: false
+      host: ~
+      client_id: ~
+      client_secret: ~
+      timeout: 30
   poa:
     s3:
       aws_access_key_id: my-aws-key-id
@@ -305,6 +307,9 @@ vre_counseling:
   prefill: true
 
 vre_readiness:
+  prefill: true
+
+coe:
   prefill: true
 
 # Settings for EVSS

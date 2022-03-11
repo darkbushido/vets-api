@@ -89,9 +89,6 @@ module V1
     end
 
     def saml_settings(options = {})
-      # add a forceAuthn value to the saml settings based on the initial options or
-      # default to false
-      options[:force_authn] ||= false
       SAML::SSOeSettingsService.saml_settings(options)
     end
 
@@ -169,13 +166,13 @@ module V1
 
       case type
       when 'mhv'
-        url_service.login_url('mhv', 'myhealthevet')
+        url_service.login_url('mhv', 'myhealthevet', AuthnContext::MHV)
       when 'mhv_verified'
-        url_service.login_url('mhv', 'myhealthevet_loa3')
+        url_service.login_url('mhv', 'myhealthevet_loa3', AuthnContext::MHV)
       when 'dslogon'
-        url_service.login_url('dslogon', 'dslogon')
+        url_service.login_url('dslogon', 'dslogon', AuthnContext::DSLOGON)
       when 'dslogon_verified'
-        url_service.login_url('dslogon', 'dslogon_loa3')
+        url_service.login_url('dslogon', 'dslogon_loa3', AuthnContext::DSLOGON)
       when 'idme'
         url_service.login_url('idme', LOA::IDME_LOA1_VETS, AuthnContext::ID_ME, AuthnContext::MINIMUM)
       when 'idme_verified'
@@ -208,7 +205,7 @@ module V1
         url_service.verify_url
       when 'custom'
         authn = validate_inbound_login_params
-        url_service(false).custom_url authn
+        url_service.custom_url authn
       end
     end
     # rubocop:enable Metrics/MethodLength
@@ -381,9 +378,8 @@ module V1
       'UNKNOWN'
     end
 
-    def url_service(force_authn = true)
-      force_authn = false unless Settings.vsp_environment == 'production'
-      @url_service ||= SAML::PostURLService.new(saml_settings(force_authn: force_authn),
+    def url_service
+      @url_service ||= SAML::PostURLService.new(saml_settings,
                                                 session: @session_object,
                                                 user: current_user,
                                                 params: params,
