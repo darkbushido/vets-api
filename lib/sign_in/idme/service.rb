@@ -43,7 +43,7 @@ module SignIn::Idme
       {
         uuid: user_info[:sub],
         loa: { current: loa, highest: loa },
-        ssn: user_info[:social_security_number].tr('-', ''),
+        ssn: user_info[:social_security_number]&.tr('-', ''),
         birth_date: user_info[:birthdate],
         first_name: user_info[:given_name],
         last_name: user_info[:family_name],
