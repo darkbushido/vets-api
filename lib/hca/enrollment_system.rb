@@ -459,14 +459,14 @@ module HCA
         provider_to_insurance_info(provider)
       end
 
-      # if veteran['isEnrolledMedicarePartA']
-      #   insurance_collection << {
-      #     'companyName' => 'Medicare',
-      #     'enrolledInPartA' => veteran['isEnrolledMedicarePartA'],
-      #     'insuranceMappingTypeName' => 'MDCR',
-      #     'partAEffectiveDate' => Validations.date_of_birth(veteran['medicarePartAEffectiveDate'])
-      #   }
-      # end
+      if veteran['isEnrolledMedicarePartA']
+        insurance_collection << {
+          'companyName' => 'Medicare',
+          'enrolledInPartA' => veteran['isEnrolledMedicarePartA'],
+          'insuranceMappingTypeName' => 'MDCR',
+          'partAEffectiveDate' => Validations.date_of_birth(veteran['medicarePartAEffectiveDate'])
+        }
+      end
 
       return if insurance_collection.blank?
 
@@ -609,7 +609,7 @@ module HCA
         'associations' => veteran_to_association_collection(veteran),
         'demographics' => veteran_to_demographics_info(veteran),
         'enrollmentDeterminationInfo' => veteran_to_enrollment_determination_info(veteran),
-        'financialsInfo' => veteran_to_financials_info(veteran),
+        # 'financialsInfo' => veteran_to_financials_info(veteran),
         'insuranceList' => veteran_to_insurance_collection(veteran),
         'militaryServiceInfo' => veteran_to_military_service_info(veteran),
         'prisonerOfWarInfo' => {
