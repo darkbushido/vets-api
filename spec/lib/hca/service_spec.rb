@@ -24,6 +24,20 @@ describe HCA::Service do
   end
   let(:current_user) { FactoryBot.build(:user, :loa3, icn: nil) }
 
+  it 'f' do
+    VCR.configure do |c|
+      c.allow_http_connections_when_no_cassette = true
+    end
+
+    service = described_class.new(
+      HealthCareApplication.get_user_identifier(current_user)
+    )
+    json = JSON.parse(File.open('spec/fixtures/hca/conformance/all-fields.json').read)
+    binding.pry; fail
+
+    service.submit_form(json)
+  end
+
   describe '#submit_form' do
     it 'increments statsd' do
       expect(StatsD).to receive(:increment).with('api.1010ez.submit_form.fail',
