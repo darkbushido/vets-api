@@ -459,14 +459,14 @@ module HCA
         provider_to_insurance_info(provider)
       end
 
-      if veteran['isEnrolledMedicarePartA']
-        insurance_collection << {
-          'companyName' => 'Medicare',
-          'enrolledInPartA' => veteran['isEnrolledMedicarePartA'],
-          'insuranceMappingTypeName' => 'MDCR',
-          'partAEffectiveDate' => Validations.date_of_birth(veteran['medicarePartAEffectiveDate'])
-        }
-      end
+      # if veteran['isEnrolledMedicarePartA']
+      #   insurance_collection << {
+      #     'companyName' => 'Medicare',
+      #     'enrolledInPartA' => veteran['isEnrolledMedicarePartA'],
+      #     'insuranceMappingTypeName' => 'MDCR',
+      #     'partAEffectiveDate' => Validations.date_of_birth(veteran['medicarePartAEffectiveDate'])
+      #   }
+      # end
 
       return if insurance_collection.blank?
 
@@ -477,7 +477,7 @@ module HCA
 
     def veteran_to_enrollment_determination_info(veteran)
       {
-        'eligibleForMedicaid' => veteran['isMedicaidEligible'].present?,
+        # 'eligibleForMedicaid' => veteran['isMedicaidEligible'].present?,
         'noseThroatRadiumInfo' => {
           'receivingTreatment' => veteran['radiumTreatments'].present?
         },
