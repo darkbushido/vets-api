@@ -440,14 +440,14 @@ module HCA
         'dischargeDueToDisability' => veteran['disabledInLineOfDuty'].present?,
         'militaryServiceSiteRecords' => {
           'militaryServiceSiteRecord' => {
-            'militaryServiceEpisodes' => {
-              'militaryServiceEpisode' => {
-                'dischargeType' => discharge_type(veteran),
-                'startDate' => Validations.date_of_birth(veteran['lastEntryDate']),
-                'endDate' => Validations.discharge_date(veteran['lastDischargeDate']),
-                'serviceBranch' => service_branch_to_sds_code(veteran['lastServiceBranch'])
-              }
-            },
+            # 'militaryServiceEpisodes' => {
+            #   'militaryServiceEpisode' => {
+            #     'dischargeType' => discharge_type(veteran),
+            #     'startDate' => Validations.date_of_birth(veteran['lastEntryDate']),
+            #     'endDate' => Validations.discharge_date(veteran['lastDischargeDate']),
+            #     'serviceBranch' => service_branch_to_sds_code(veteran['lastServiceBranch'])
+            #   }
+            # },
             'site' => veteran['vaMedicalFacility']
           }
         }
