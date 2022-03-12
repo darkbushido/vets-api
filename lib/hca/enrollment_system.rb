@@ -477,7 +477,7 @@ module HCA
 
     def veteran_to_enrollment_determination_info(veteran)
       {
-        # 'eligibleForMedicaid' => veteran['isMedicaidEligible'].present?,
+        'eligibleForMedicaid' => veteran['isMedicaidEligible'].present?,
         'noseThroatRadiumInfo' => {
           'receivingTreatment' => veteran['radiumTreatments'].present?
         },
