@@ -18,6 +18,7 @@ module HCA
     def on_complete(env)
       super
     rescue Common::Client::Errors::HTTPError => e
+      binding.pry; fail
       if env.status.to_i == 503
         raise Faraday::TimeoutError
       else
