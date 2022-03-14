@@ -3,6 +3,7 @@
 require 'flipper/admin_user_constraint'
 
 Rails.application.routes.draw do
+  get 'form1095_b/download'
   match '/v0/*path', to: 'application#cors_preflight', via: [:options]
   match '/services/*path', to: 'application#cors_preflight', via: [:options]
 
@@ -27,6 +28,9 @@ Rails.application.routes.draw do
     resources :veteran_readiness_employment_claims, only: :create
     resource :virtual_agent_token, only: [:create], controller: :virtual_agent_token
     resources :preferred_facilities, only: %i[index create destroy]
+    
+    resource :form1095_bs, only: :download  
+    get 'form1095_bs/:tax_year', to: 'form1095_bs#download'
 
     resources :medical_copays, only: :index
     get 'medical_copays/get_pdf_statement_by_id/:statement_id', to: 'medical_copays#get_pdf_statement_by_id'
