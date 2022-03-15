@@ -32,10 +32,19 @@ RSpec.describe SignInController, type: :controller do
 
     describe 'GET callback' do
       %w[logingov idme].each do |type|
+        let(:code) do
+          case type
+          when 'logingov'
+            '6805c923-9f37-4b47-a5c9-214391ddffd5'
+          when 'idme'
+            'b6bd8e0aff604043a29690dcbd40e33a'
+          end
+        end
+
         context 'successful authentication' do
           it 'redirects user to home page' do
             VCR.use_cassette("identity/#{type}_200_responses") do
-              post(:callback, params: { type: type, code: '6805c923-9f37-4b47-a5c9-214391ddffd5' })
+              post(:callback, params: { type: type, code: code })
               expect(response).to redirect_to("http://localhost:3001/auth/login/callback?type=#{type}")
             end
           end
@@ -49,7 +58,7 @@ RSpec.describe SignInController, type: :controller do
                   'the server responded with status 400',
                   :error
                 )
-              post(:callback, params: { type: type, code: '6805c923-9f37-4b47-a5c9-214391ddffd5' })
+              post(:callback, params: { type: type, code: code })
               expect(response).to redirect_to('http://localhost:3001/auth/login/callback?auth=fail&code=007')
               expect(response).to have_http_status(:found)
             end

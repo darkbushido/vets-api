@@ -1,0 +1,66 @@
+---
+http_interactions:
+- request:
+    method: post
+    uri: https://api.idmelabs.com/oauth/token
+    body:
+      encoding: UTF-8
+      string: '{"grant_type":"authorization_code","code":"b6bd8e0aff604043a29690dcbd40e33a","client_id":"dde0b5b8bfc023a093830e64ef83f148","client_<DMC_TOKEN>":"e745319288bd005c9fca7d8164f302c7","redirect_uri":"http://localhost:3000/sign_in/idme/callback"}'
+    headers:
+      Accept:
+      - application/json
+      Content-Type:
+      - application/json
+      User-Agent:
+      - Vets.gov Agent
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
+  response:
+    status:
+      code: 400
+      message: Bad Request
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+      X-Frame-Options:
+      - allow-from https://nextgenid-mbetenantworkflow.azurewebsites.net
+      X-Xss-Protection:
+      - 1; mode=block
+      X-Content-Type-Options:
+      - nosniff
+      Content-Security-Policy:
+      - frame-ancestors https://nextgenid-mbetenantworkflow.azurewebsites.net
+      Www-Authenticate:
+      - Bearer realm="ID.me", error="invalid_grant", error_description="The provided
+        authorization grant is expired or revoked"
+      X-Request-Id:
+      - 5e2967ef-025d-4687-a79c-48c48449eca6
+      X-Runtime:
+      - '0.020310'
+      Strict-Transport-Security:
+      - max-age=15552000; includeSubDomains
+      Content-Length:
+      - '102'
+      Expires:
+      - Tue, 15 Mar 2022 18:39:59 GMT
+      Cache-Control:
+      - max-age=0, no-cache, no-store
+      Pragma:
+      - no-cache
+      Date:
+      - Tue, 15 Mar 2022 18:39:59 GMT
+      Connection:
+      - close
+      Set-Cookie:
+      - idme-session=b5e5be0eefb91b72bff1c76781678c0e; domain=.idmelabs.com; path=/;
+        expires=Wed, 16 Mar 2022 18:39:59 GMT; secure; HttpOnly; SameSite=None
+      Server-Timing:
+      - cdn-cache; desc=MISS
+      - edge; dur=194
+      - origin; dur=65
+    body:
+      encoding: UTF-8
+      string: '{"error":"invalid_grant","error_description":"The provided authorization
+        grant is expired or revoked"}'
+  recorded_at: Tue, 15 Mar 2022 18:39:59 GMT
+recorded_with: VCR 6.0.0

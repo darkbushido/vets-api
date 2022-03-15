@@ -1,0 +1,138 @@
+---
+http_interactions:
+- request:
+    method: post
+    uri: https://api.idmelabs.com/oauth/token
+    body:
+      encoding: UTF-8
+      string: '{"grant_type":"authorization_code","code":"b6bd8e0aff604043a29690dcbd40e33a","client_id":"dde0b5b8bfc023a093830e64ef83f148","client_<DMC_TOKEN>":"e745319288bd005c9fca7d8164f302c7","redirect_uri":"http://localhost:3000/sign_in/idme/callback"}'
+    headers:
+      Accept:
+      - application/json
+      Content-Type:
+      - application/json
+      User-Agent:
+      - Vets.gov Agent
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+      X-Frame-Options:
+      - allow-from https://nextgenid-mbetenantworkflow.azurewebsites.net
+      X-Xss-Protection:
+      - 1; mode=block
+      X-Content-Type-Options:
+      - nosniff
+      Content-Security-Policy:
+      - frame-ancestors https://nextgenid-mbetenantworkflow.azurewebsites.net
+      Etag:
+      - W/"bf796abf82a2aae175347d4eec9e1e45"
+      X-Request-Id:
+      - 39fe5df1-cbf9-4c48-831e-e88be1cf682d
+      X-Runtime:
+      - '0.046455'
+      Strict-Transport-Security:
+      - max-age=15552000; includeSubDomains
+      X-Node:
+      - sandbox-core-02.idmeinc.net
+      Vary:
+      - Accept-Encoding
+      Expires:
+      - Tue, 15 Mar 2022 18:34:37 GMT
+      Cache-Control:
+      - max-age=0, no-cache, no-store
+      Pragma:
+      - no-cache
+      Date:
+      - Tue, 15 Mar 2022 18:34:37 GMT
+      Content-Length:
+      - '222'
+      Connection:
+      - keep-alive
+      Set-Cookie:
+      - idme-session=6986c48975fbdc6cbccd72919c0cb002; domain=.idmelabs.com; path=/;
+        expires=Wed, 16 Mar 2022 18:34:37 GMT; secure; HttpOnly; SameSite=None
+      Server-Timing:
+      - cdn-cache; desc=MISS
+      - edge; dur=33
+      - origin; dur=65
+    body:
+      encoding: UTF-8
+      string: '{"access_token":"5b11e47c55774aaa8f908e60bd3085f3","token_type":"bearer","expires_in":300,"scope":"http://idmanagement.gov/ns/assurance/loa/3","refresh_token":"387e71cc88ec49d38f29052e480749fa","refresh_expires_in":604800}'
+  recorded_at: Tue, 15 Mar 2022 18:34:37 GMT
+- request:
+    method: get
+    uri: https://api.idmelabs.com/api/public/v3/attributes.json
+    body:
+      encoding: US-ASCII
+      string: ''
+    headers:
+      Accept:
+      - application/json
+      Content-Type:
+      - application/json
+      User-Agent:
+      - Vets.gov Agent
+      Authorization:
+      - Bearer 5b11e47c55774aaa8f908e60bd3085f3
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+      X-Frame-Options:
+      - allow-from https://nextgenid-mbetenantworkflow.azurewebsites.net
+      X-Xss-Protection:
+      - 1; mode=block
+      X-Content-Type-Options:
+      - nosniff
+      Content-Security-Policy:
+      - frame-ancestors https://nextgenid-mbetenantworkflow.azurewebsites.net
+      Etag:
+      - W/"3fe3db42d35ee1e8ea7d47d257dcf20c"
+      X-Request-Id:
+      - 687828c8-142c-49fc-8959-702041af4878
+      X-Runtime:
+      - '0.323819'
+      Strict-Transport-Security:
+      - max-age=15552000; includeSubDomains
+      X-Node:
+      - sandbox-core-02.idmeinc.net
+      Vary:
+      - Accept-Encoding
+      Expires:
+      - Tue, 15 Mar 2022 18:34:37 GMT
+      Cache-Control:
+      - max-age=0, no-cache, no-store
+      Pragma:
+      - no-cache
+      Date:
+      - Tue, 15 Mar 2022 18:34:37 GMT
+      Content-Length:
+      - '2276'
+      Connection:
+      - keep-alive
+      Set-Cookie:
+      - ak_bmsc=E382A630A1FA8BB103DEEB30E6E94E3C~000000000000000000000000000000~YAAQPPo7F1A1LWZ/AQAAK1Hcjg/UbRZaPBhZEfaWUoyuIF1reQce6Zp8x24IktbUVZF3L6RVqNXn7wg562k+1OkmwielBO/tXBusN6zgaN4Dnn6FgZAvziYUQMe09XscRTb5XSZHEwRf+zn2BNq0vvXX5fvQz7OdNrbDdw89VdDaiAbHarl9HsHd7jpew+W11mlTbQbaIjdoLA1alYEsRUWMV/ZIbMGctLy0mk3oIqv9YTAN8Q7oHpGziidyqOQJ5ORBO8tfWDk0hO/jUcDbQdK13czcwNj/R6q+6kTg2Miyx4BvNZAIamy5CcbfODwV125yCfe7D0BGVAkn5cHSCKkNvLd0VSWh0VupD0ApEQHQB3BpxD1upx0P0wmb5U69o1XQSZtT3GrVo0vVadjVmgMgzi2ySg==;
+        Domain=.idmelabs.com; Path=/; Expires=Tue, 15 Mar 2022 20:34:37 GMT; Max-Age=7200;
+        HttpOnly
+      - idme-session=a584644a5d374dfb73046efd5fdc04a8; domain=.idmelabs.com; path=/;
+        expires=Wed, 16 Mar 2022 18:34:37 GMT; secure; HttpOnly; SameSite=None
+      Server-Timing:
+      - cdn-cache; desc=MISS
+      - edge; dur=22
+      - origin; dur=343
+    body:
+      encoding: UTF-8
+      string: '{"data":"LRGxJ1WwkMkWvAdr2hwiC0LBZOhRrrAsbe8j7nCDIkfDgp7VJowUWSrzlzcgoSUaciBjwrSUaE433G5sr/5A59pq2rzaoWO9DkHF3mkgUTeFTlMNK0jBd9yZpPS+xySoqA4TI+S5ETMc8GU7Pb/xvo5GzIHuFd1oWakP3c7xH5vFbZdJxdfqEf5cLTJaPPqZAhA7m78/SP9Z03QifTTGrW+e3B2/hD6bpUABlGEjQpX0Co014zPPjTina8iULWmDNsJFnw8CuRgoloFyg+d+XLp/jBEh1n7DxdFfQ3L/O0YugONLJNFiXo5kubDjQI9Egl9ju5+X4JSg8dbWDXdyJmI82ADy+vvY4uQETTnQrf3Of3GhsWuR0NAedCoct3ijkZeBg7mV3OXmrgUPXfi77f8JGRY/5Y/V2BOipceoxu0YWWBFexmRX5wiXiylnIwJk4DKIHmGjY4Ej0RBmWsngvDVjfFy6gcT/3kZwDLDimZ3Xd4zUPHP+DuJ7b/671k5w1/S8kUPJPpiq8vNaxCyBc5nIuEyefM5wAacxVtKrh+q+4qz9G6FU0oSRcG/OU1SFvJEnCJnPU/2f9M8On0qQPqyME8n7+M6BdIoZ08qbVBJYWFux5oy6etImReUyV0dDKetYyKrr7pi4ovMq6JRGerCm6ItPs/EtLHqypkhFUReA5A9DUSBIEIsihV5WbZF8pF9TyPtJGRP1zhqLsdjdtMH/65HGOTVB6zFh+lERgZp1kITHXqiEF0BdXl9bex1HtRI/iUfSP/b0VtL2Fl7PwhPOY5BMGPDVy059J6JznOwA+tsbWGhlQ9ae96QU4noPJYBeI87hEo/xgP7wXy0OZwhp+MjKolZtSpfdQpEh5feDXcFGauja4J/i3G5CzlJMQ17fF9wZgP70EnPRWoADD7sXlxN5tg53F1yjdui5KGm+XNDKI1w3VGFI39DAM9pOninHE3JMy/Gh/piPSjDtDKf9gVxau7RZ10RXwzEbSCcTUk9DqPA8AaNSy5Y7ch//cA8E5lOpJQsiA8fcFOApXHYudVGAaf3jdC3e4YeLnnw9RPyXje+FvPAr5JIUprqfGkACLKicZTqgRUL/Dssd1tSnelYjKvEekbRnp5clauQFFi+W4RC5XLGI8+yPf4HS1kZlqRmvrm0/bya2ET+h883XSFrjyfRhkuOgTSkyZPsnXXi4nYau31Wpa7dKUZAvkPXnFMzqWA4DPjf1Ohym3lg2kFMmCpAOd0DY2/s94wmnXUzZesOCl0lWzsxZtulnYMF1E9RfCGWL64npFBXaozdRg27t6hTsmliaRFJ/Sh1fodMkfYGp5p5OqdswGJtP+Kr5IT3Pl1Ar7LZwVeBvh8txlo4JoK05DxZ342+Kr3CUojDjO0Xm4ySdCKl81fCiPBtSwtDq0cu6bgz7xwm5DIRzvYqEWyG/xuDEIQf+UqW9Vouy4934s/u32XmU8L94HrFa0jNFqewXBxuDP5Leb7YZi5m0vcRlM5dEoi3p40d9DHmjRUJ2P1Hb8PklrbWMgznW2P4qOA/aLlV9QNfbaJK5BCnWSlSmrRVHLfyqb4XyNOBn9NDii0JmGS5m7KsGL7NDhBfmopwNWzo2SmZ6N44onnUm661XDNay7TA3xZ5dOReFqWuFjlOlUFlCuwjyurIPLysrk0BGi5QDMxgBWPq6ctJPc+3wXlJAiq/+cI6xWgNH7yqL4PChakbQNHxlvkQf7fzmIsltN6vbA2R+3AXyA2VlOxYPCSqr3bQhxccyTgQyhESXWQqhXjGtjf20vS450afsb4ahCUS5cr2aKYVJYFVM3du4PX6mAVGu+DPlii2CHGwtyNXT6outqV9PMA15oiqXzjWJC4OmY3zQw==","key":"ZkbwVmCtgLTxhiDfg86jvnEItXLZukkIdHR4RHZdKn/Qgk5mv3mDkWh8VOTeTD/M5qxW0OXSJ7q1Ib4iXVMzfTMRVYMxVgxAeX8wBDo2quMdDw8Pgu+sKqoU1fwyybARWZ4JovyqPNF8XBOZwRUJ0LvyVOz4yWiBIQBgFdS7/qXlOWB3klYtMi4gwcCjAKmVnEdzs6MfYkcTa43APKHQ0rgicZx8kegSjBixjQ/iI16GCjcj6x0lefI2VmtNd8zPwo+bjo94u56gVwVF5RWR6ZcBRGF6FspNZIzFw1YAJNa3vSaRH73TcDqk0wi5wRwccj/BVBL1pCW5DvxbnRBAZA==","iv":"aFDpT0IRm3M1f7z7VUtUjg=="}'
+  recorded_at: Tue, 15 Mar 2022 18:34:37 GMT
+recorded_with: VCR 6.0.0
