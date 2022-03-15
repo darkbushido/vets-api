@@ -26,6 +26,7 @@ module ClaimsApi
           poa_code = form_attributes.dig('serviceOrganization', 'poaCode')
           validate_poa_code!(poa_code)
           validate_poa_code_for_current_user!(poa_code) if header_request? && !token.client_credentials_token?
+          check_file_number_exists!
 
           power_of_attorney = ClaimsApi::PowerOfAttorney.find_using_identifier_and_source(header_md5: header_md5,
                                                                                           source_name: source_name)
@@ -224,7 +225,8 @@ module ClaimsApi
           begin
             response = bgs_service.people.find_by_ssn(ssn) # rubocop:disable Rails/DynamicFindBy
             unless response && response[:file_nbr].present?
-              error_message = 'Unable to locate Veteran file number.'
+              error_message = 'Unable to locate Veteran file number for eFolder. '\
+                              'Please contact the Digital Transformation Center (DTC) at 202-921-0911 for assistance.'
               raise ::Common::Exceptions::UnprocessableEntity.new(detail: error_message)
             end
           rescue BGS::ShareError => e
