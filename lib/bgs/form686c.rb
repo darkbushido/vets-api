@@ -145,11 +145,17 @@ module BGS
       # if we are setting the claim to be manually reviewed, then exception/rejection labels should be used
       if proc_state == 'MANUAL_VAGOV'
         if removing_dependent && receiving_pension
-          @end_product_name = 'PMC - Self Service - Removal of Dependent Exceptn'
-          @end_product_code = '130SSRDPMCE'
+          # exception labels are not ready yet so use these TEMPORARILY
+          @end_product_name = 'PMC - Self Service - Removal of Dependent'
+          @end_product_code = '130SSRDPMC'
+          # @end_product_name = 'PMC - Self Service - Removal of Dependent Exceptn'
+          # @end_product_code = '130SSRDPMCE'
         elsif removing_dependent
-          @end_product_name = 'Self Service - Removal of Dependent Exception'
-          @end_product_code = '130SSRDE'
+          # exception labels are not ready yet so use these TEMPORARILY
+          @end_product_name = 'Self Service - Removal of Dependent'
+          @end_product_code = '130SSRD'
+          # @end_product_name = 'Self Service - Removal of Dependent Exception'
+          # @end_product_code = '130SSRDE'
         elsif receiving_pension
           @end_product_name = 'PMC eBenefits Dependency Adjustment Reject'
           @end_product_code = '130DAEBNPMCR'
