@@ -2,8 +2,8 @@ module V0
   class Form1095BsController < ApplicationController
 
     # todo:  find what access is needed...
-    skip_before_action :authenticate # for testing
-    # before_action { authorize :form1095, :access?}
+    # skip_before_action :authenticate # for testing
+    before_action { authorize :form1095, :access?}
     
     # version for testing without authentication
     def download
@@ -11,13 +11,14 @@ module V0
       puts "downloading...................................................................................................."
       puts download_params
 
-      # form = Form1095B.find_by_icn_and_year(@current_user[:icn], download_params[:tax_year])
-      form = Form1095B.first
-      puts form.first_name
+      form = Form1095B.find_by(:veteran_icn => @current_user[:icn], :tax_year => download_params)
+      # form = Form1095B.first
       
-      raise Common::Exceptions::RecordNotFound, download_params unless form.present?
-
-      # render json: form.gen_pdf
+      unless form.present?
+        puts "Form 1095-B for year #{download_params} not found" #, user_uuid: @current_user&.uuid
+        Rails.logger.error("Form 1095-B for year #{download_params} not found", user_uuid: @current_user&.uuid)
+        raise Common::Exceptions::RecordNotFound, download_params
+      end
 
       file_name = "1095B_#{download_params}.pdf"
       send_data form.get_pdf, filename: file_name, type: "application/pdf", disposition: "attachment"

@@ -14,7 +14,6 @@ class Form1095B < ApplicationRecord
   # more validations
 
   # scopes
-  scope :find_by_icn_and_year, -> (icn, year) {where("veteran_icn = ? and tax_year = ?", icn, year).first}
 
   # assumes ssn is already last 4 if only 4 digits are provided
   before_save :store_last_4, if: -> { ssn.size == 9 }
@@ -29,15 +28,21 @@ class Form1095B < ApplicationRecord
 
   private
 
+  # maybe move this to a concern/helper, so that we can have multiple pdf generation functions (for different year)
   def generate_pdf
-    puts "Here is PDF!" # placeholder for testing
     pdf = PdfForms.new(Settings.binaries.pdftk)
     # binding.pry
 
     temp_location = "lib/pdf_fill/temp/1095B-#{DateTime.now.to_i}.pdf"
+    template_file = "lib/pdf_fill/forms/pdfs/f1095bs/1095b-#{self.tax_year}.pdf"
+
+    unless File.exist?(template_file)
+      Rails.logger.error "1095-B template for year #{self.tax_year} does not exist."
+      raise Common::Exceptions::RecordNotFound, download_params
+    end
 
     pdf.fill_form(
-      "lib/pdf_fill/forms/pdfs/f1095bs/1095b-#{self.tax_year}.pdf",
+      template_file,
       temp_location,
       {
         :"topmostSubform[0].Page1[0].Pg1Header[0].cb_1[1]" => self.is_corrected && 2,
@@ -45,7 +50,7 @@ class Form1095B < ApplicationRecord
         :"topmostSubform[0].Page1[0].Part1Contents[0].Line1[0].f1_02[0]" => self.middle_name,
         :"topmostSubform[0].Page1[0].Part1Contents[0].Line1[0].f1_03[0]" => self.last_name,
         :"topmostSubform[0].Page1[0].Part1Contents[0].f1_04[0]" => self.ssn || "",
-        :"topmostSubform[0].Page1[0].Part1Contents[0].f1_05[0]" => self.birth_date || "",
+        :"topmostSubform[0].Page1[0].Part1Contents[0].f1_05[0]" => self.ssn ? "" : self.birth_date,
         :"topmostSubform[0].Page1[0].Part1Contents[0].f1_06[0]" => self.address, #street address
         :"topmostSubform[0].Page1[0].Part1Contents[0].f1_07[0]" => self.city,  #city/town
         :"topmostSubform[0].Page1[0].Part1Contents[0].f1_08[0]" => self.state ? self.state : self.province, 
@@ -54,7 +59,7 @@ class Form1095B < ApplicationRecord
         :"topmostSubform[0].Page1[0].Table1_Part4[0].Row23[0].f1_26[0]" => self.middle_name ? self.middle_name[0] : "",
         :"topmostSubform[0].Page1[0].Table1_Part4[0].Row23[0].f1_27[0]" => self.last_name,
         :"topmostSubform[0].Page1[0].Table1_Part4[0].Row23[0].f1_28[0]" => self.ssn || "",
-        :"topmostSubform[0].Page1[0].Table1_Part4[0].Row23[0].f1_29[0]" => self.birth_date || "", 
+        :"topmostSubform[0].Page1[0].Table1_Part4[0].Row23[0].f1_29[0]" => self.ssn ? "" : self.birth_date, 
         :"topmostSubform[0].Page1[0].Table1_Part4[0].Row23[0].c1_01[0]" => self.coverage_months[0] && 1,
         :"topmostSubform[0].Page1[0].Table1_Part4[0].Row23[0].c1_02[0]" => self.coverage_months[1] && 1,
         :"topmostSubform[0].Page1[0].Table1_Part4[0].Row23[0].c1_03[0]" => self.coverage_months[2] && 1,
@@ -71,11 +76,8 @@ class Form1095B < ApplicationRecord
       },
       flatten: true
     )
-    # binding.pry
+    # try to return PDF without saving the file first
 
-    # TODO: try with below commented out
-    # source_file_path = temp_location # where the file gets saved - do we want to change this? 
-    # client_file_name = '1095B.pdf'
     file_contents = File.read(temp_location)
     
      #during testing make sure this line does not delete the file that is used as the template
