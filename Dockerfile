@@ -14,7 +14,14 @@ RUN groupadd --gid $USER_ID nonroot \
 WORKDIR /app
 
 RUN apt-get update \
-  && apt-get install -y build-essential libpq-dev git imagemagick curl wget pdftk poppler-utils file \
+  && apt-get install -y libpq-dev git imagemagick curl wget pdftk file wget xz-utils cmake gcc build-essential libfontconfig1-dev pkg-config libjpeg-dev gnome-common libglib2.0-dev gtk-doc-tools libyelp-dev yelp-tools gobject-introspection libsecret-1-dev libnautilus-extension-dev libopenjp2-7 libopenjp2-7-dev libboost-all-dev && \
+     wget https://poppler.freedesktop.org/poppler-21.11.0.tar.xz && \
+     unxz poppler-21.11.0.tar.xz && \
+     tar xf poppler-21.11.0.tar && \
+     cd poppler-21.11.0 && \
+     cmake  -DCMAKE_BUILD_TYPE=Release   \
+            -DENABLE_XPDF_HEADERS=ON && \
+     make install \
   && apt-get clean \
   && rm -rf /var/cache/apt/archives/* /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
