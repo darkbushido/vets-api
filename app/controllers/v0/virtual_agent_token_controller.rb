@@ -10,10 +10,15 @@ module V0
     rescue_from Net::HTTPError, with: :service_exception_handler
 
     def create
-      return render status: :not_found unless Flipper.enabled?(:virtual_agent_token)
 
-      render json: { token: fetch_connector_token,
-                     apiSession: ERB::Util.url_encode(cookies[:api_session]) }
+      if !Flipper.enabled?(:virtual_agent_token)
+        return render status: :not_found
+      else
+        directLine_response = fetch_connector_token
+        render json: { token: directLine_response[:token],
+                       conversationId: directLine_response[:conversationId],
+                       apiSession: ERB::Util.url_encode(cookies[:api_session]) }
+      end
     end
 
     private
@@ -34,7 +39,11 @@ module V0
     def parse_connector_token(response)
       raise ServiceException.new(response.body), response.body unless response.code == '200'
 
-      JSON.parse(response.body)['token']
+      return {
+          token: JSON.parse(response.body)['token'],
+          conversationId: JSON.parse(response.body)['conversationId']
+      }
+
     end
 
     def token_endpoint_uri
