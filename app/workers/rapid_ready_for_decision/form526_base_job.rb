@@ -31,12 +31,13 @@ module RapidReadyForDecision
       begin
         with_tracking(self.class.name, form526_submission.saved_claim_id, form526_submission_id) do
           assessed_data = assess_data(form526_submission)
-          return if assessed_data.nil?
+          next if assessed_data.nil?
 
           pdf = generate_pdf(form526_submission, assessed_data)
           upload_pdf(form526_submission, pdf)
 
-          if Flipper.enabled?(:disability_hypertension_compensation_fast_track_add_rrd)
+          if Flipper.enabled?(:disability_hypertension_compensation_fast_track_add_rrd) ||
+             Flipper.enabled?(:rrd_add_special_issue)
             set_special_issue(form526_submission)
           end
         end

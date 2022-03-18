@@ -31,7 +31,7 @@ module RapidReadyForDecision
 
           return if bp_readings(client).blank?
 
-          pdf = pdf(form526_submission.full_name, bp_readings(client), medications(client))
+          pdf = pdf(patient_info(form526_submission), bp_readings(client), medications(client))
           upload_pdf_and_attach_special_issue(form526_submission, pdf)
         end
       rescue => e
@@ -45,6 +45,10 @@ module RapidReadyForDecision
     class AccountNotFoundError < StandardError; end
 
     private
+
+    def patient_info(form526_submission)
+      form526_submission.full_name.merge(birthdate: form526_submission.auth_headers['va_eauth_birthdate'])
+    end
 
     def bp_readings(client)
       @bp_readings ||= client.list_resource('observations')
@@ -90,13 +94,14 @@ module RapidReadyForDecision
 
     def upload_pdf_and_attach_special_issue(form526_submission, pdf)
       RapidReadyForDecision::HypertensionUploadManager.new(form526_submission).handle_attachment(pdf.render)
-      if Flipper.enabled?(:disability_hypertension_compensation_fast_track_add_rrd)
+      if Flipper.enabled?(:disability_hypertension_compensation_fast_track_add_rrd) ||
+         Flipper.enabled?(:rrd_add_special_issue)
         RapidReadyForDecision::HypertensionSpecialIssueManager.new(form526_submission).add_special_issue
       end
     end
 
-    def pdf(full_name, bpreadings, medications)
-      RapidReadyForDecision::HypertensionPdfGenerator.new(full_name, bpreadings, medications).generate
+    def pdf(patient_info, bpreadings, medications)
+      RapidReadyForDecision::HypertensionPdfGenerator.new(patient_info, bpreadings, medications).generate
     end
   end
 end
