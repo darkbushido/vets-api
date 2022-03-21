@@ -14,17 +14,6 @@ module MPI
       )
     end
 
-    def create_profile_message(user_identity, search_type: MPI::Constants::CORRELATION_WITH_RELATIONSHIP_DATA)
-      unless user_identity.valid? && user_identity.edipi.present?
-        raise Common::Exceptions::UnprocessableEntity.new(
-          detail: 'User is invalid or missing edipi',
-          source: 'OrchSearchService'
-        )
-      end
-
-      message_user_attributes(user_identity, search_type)
-    end
-
     def message_user_attributes(user_identity, search_type)
       given_names = [user_identity.first_name]
       given_names.push user_identity.middle_name unless user_identity.middle_name.nil?
