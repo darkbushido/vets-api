@@ -174,7 +174,7 @@ module MPI
       return message_edipi(user_identity, search_type) if user_identity.edipi.present? && Settings.mvi.edipi_search
       raise Common::Exceptions::ValidationErrors, user_identity unless user_identity.valid?
 
-      message_user_attributes(user_identity, search_type, orch_search)
+      message_user_attributes(user_identity, search_type, orch_search: orch_search)
     end
 
     def message_icn(user_identity, search_type)
