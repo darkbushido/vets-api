@@ -7,7 +7,7 @@ class CreateForm1095Bs < ActiveRecord::Migration[6.1]
       t.string :middle_name
       t.string :last_name, null: false
       t.date :birth_date
-      t.string :ssn # only need to store last 4; is string because first character can be 0
+      t.string :ssn
       t.string :address, null: false
       t.string :city
       t.string :state
@@ -16,8 +16,7 @@ class CreateForm1095Bs < ActiveRecord::Migration[6.1]
       t.string :province
       t.string :foreign_zip
       t.boolean :coverage_months, array:true, null: false
-      t.integer :tax_year, null: false # validate that only one exists per vet, per year
-      # t.datetime :last_modified, null: false # , default: DateTime.now
+      t.integer :tax_year, null: false
       t.boolean :is_corrected, default: false
       t.boolean :is_beneficiary, default: false
 
