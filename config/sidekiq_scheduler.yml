@@ -2,11 +2,6 @@
 # over all workers. The `every` option will run the job once per worker instance
 # at the specified interval.
 
-GetNew1095Bs:
-  every: '3m' # just for testing
-  class: Form1095::GetNew1095Bs
-  description: "Getting new 1095Bs"
-
 ExportBreakerStatus:
  every: '1m'
  description: "Send breaker status to statsd"
@@ -281,3 +276,8 @@ TestUserDashboard::MirrorAccountAvailabilityLogsInBigQuery:
  cron: "0 */2 * * * America/New_York"
  class: TestUserDashboard::MirrorAccountAvailabilityLogsInBigQuery
  description: "Mirrors the test_user_dashboard_tud_account_availability_logs table in BigQuery."
+
+GetNew1095Bs:
+  cron: "0 3 * * * America/New_York"
+  class: Form1095::GetNew1095Bs
+  description: "Getting new 1095Bs"
