@@ -142,7 +142,7 @@ class MPIData < Common::RedisStore
 
   # @return [String] Array representing the historical icn data for the user
   def mvi_get_person_historical_icns
-    mpi_profile = mpi_service.find_profile(user_identity, search_type: MPI::Constants::CORRELATION_WITH_ICN_HISTORY)
+    mpi_profile = mpi_service.find_profile(user_identity, MPI::Constants::CORRELATION_WITH_ICN_HISTORY)
     mpi_profile&.profile&.historical_icns
   end
 
