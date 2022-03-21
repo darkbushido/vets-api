@@ -1,36 +1,34 @@
 require 'sidekiq-scheduler'
-# require 'pry'
-# require 'active_support'
-# require 'active_support/core_ext'
-# require 'aws-sdk-s3'
 
 module Form1095
   class GetNew1095Bs
     include Sidekiq::Worker
 
-    # BASE_PATH = './test_flat_files/'
-    BUCKET = 'dsva-vagov-dev-1095b-form-uploads'
+
+    def bucket
+      @bucket ||= Aws::S3::Resource.new(
+        region: Settings.form1095_b.s3.region,
+        access_key_id: Settings.form1095_b.s3.aws_access_key_id,
+        secret_access_key: Settings.form1095_b.s3.aws_secret_access_key
+      ).bucket(Settings.form1095_b.s3.bucket)
+      # @bucket ||= Aws::S3::Resource.new(
+      #   region: 'us-gov-west-1', 
+      #   access_key_id: "ASIAQD72FDTF63A3VAUG",
+      #   secret_access_key: "cQ7SC6SvAFULPxMYhp8xjzK9gFagoQFPdNrto9EX",
+      #   session_token: "FwoDYXdzEHgaDBxU3s1GZvIIF3w9MCKGAdw1ILuU+sqc7BNpUzdteDW/y1Z9Cn9GXMptMNgYqXqzkS0MFCgmOCmF+CQHzAeJPnyOLgES+MiG+bupYKl664PnZh2TfGcNWYD2YWjApGV1nUiHPKJmm1cfVpw4NxZ9VrG+86MTnn79KFkFHJXUdQaykBYM4vPjHh6ZNvTLS+UOuK/zqcXLKLWPw5EGMii8BJXjgSNY/jNhRlYRDFgHDl553+EsgsHw95jwPm3PY62RKIC5bZHi"
+      # ).bucket("dsva-vagov-dev-1095b-form-uploads")
+    end
+
 
     def get_bucket_files
       # grabs available file names from bucket
-      # how to know if we've checked it already?? todo: delete files after successfully reading them...?
-      # todo: does the below return array of the file names?
-      @s3.list_objects({ bucket: BUCKET, prefix: 'MEC', delimiter: '/' }).contents.collect(&:key) # gets file names # todo: uncomment when @s3 available
-      # Dir.entries(BASE_PATH).filter {|file| file.include?('.txt')}
-
-      # files.present? ? files : [] # what does empty bucket return?
+      bucket.objects({prefix: 'MEC', delimiter: '/'}).collect(&:key)
     end
 
-    # def get_test_bucket_files
-    #   # check for filenames in './test_flat_files/'
-    #   Dir.entries(BASE_PATH).filter {|file| file.include?('.txt')}
-    # end
 
     def parse_file_name(file_name) # or file...?
       return {} unless file_name.present?
-      # parse file name to check if its for veteran/dependent
 
-      # return obj like: {:is_vet => true, :isOg => true, :tax_year => 2021, :timestamp => <file timestamp from name>}
       file_values = file_name.sub('.txt', '').split('_')
 
       year = file_values[3].to_i
@@ -44,17 +42,18 @@ module Form1095
       }
     end
 
+
     def gen_address(addr1, addr2, addr3)
       addr1.concat(" ", addr2 || "", " ", addr3 || "").strip # shouldn't be an addr3 if addr 2 doesn't exist, so no worries about double space in middle
     end
 
+
     def parse_form(form)
-      # return hash with form fields
       data = form.split('^')
 
       # form_type = data[0].sub('FORM=', '')
       # creation_date = data[1]
-      # unique_id = data[2]
+      unique_id = data[2]
 
       temp = {}
       data.each_with_index do |field, ndx|
@@ -68,12 +67,13 @@ module Form1095
       i = 1
       while i <= 13 do
         val = "H".concat(i < 10 ? "0" : "", i.to_s)
-        coverage_arr.push(temp[val.to_sym] ? true : false)
+        coverage_arr.push((temp[val.to_sym]) ? true : false)
 
         i += 1
       end
 
       {
+        :unique_id => unique_id,
         :last_name => temp[:A01],
         :first_name => temp[:A02],
         :middle_name => temp[:A03],
@@ -91,117 +91,86 @@ module Form1095
       }
     end
 
-    def save_data?(form_data, year, is_original, is_beneficiary)
-      # check to see if record exists for this year
-      # if exists, then make sure its a correction and update
-      # else create new Form1095B to store
 
-      existing_form = Form1095B.find_by(:veteran_icn => form_data[:veteran_icn], :tax_year => year)
+    def save_data?(form_data)
 
-      return true if is_original and existing_form.present?  # returns true to indicate successful entry
-      return false if !is_original and existing_form.nil? # return false here?? if is a correction, then it should already exist
+      existing_form = Form1095B.find_by(:veteran_icn => form_data[:veteran_icn], :tax_year => form_data[:tax_year])
 
-      form_data[:tax_year] = year
-      form_data[:is_corrected] = !is_original
-      form_data[:is_beneficiary] = is_beneficiary
+      if !form_data[:is_corrected] and existing_form.present?  # returns true to indicate successful entry
+        Rails.logger.warn "Form for #{form_data[:tax_year]} already exists, but file is for Original 1095-B forms. Skipping this entry."
+        return true 
+      elsif form_data[:is_corrected] and existing_form.nil?
+        Rails.logger.warn "Form for year #{form_data[:tax_year]} not found, but file is for Corrected 1095-B forms. Skipping this entry." # ...?
+        return true  # return false here?? (or create form?) if is a correction, then it should already exist
+      end
 
-      if is_original
+      if existing_form.nil?
         form = Form1095B.new(form_data)
         return form.save
       else
-        # update only not nil fields...?
-        # form_data.each do |key, value|
-        #   form_data.delete(key) unless value != nil
-        # end
-
         return existing_form.update(form_data)
       end
 
       false
     end
 
+
+    # downloading file to the disk and then reading that file, this will allow us to read large S3 files without exhausting resources/crashing the system
     def process_file?(file_name)
-      puts 'processing file: ' + file_name
+      Rails.logger.info "processing file: " + file_name
       return false unless file_name.include?(".txt")
 
-      file_details = parse_file_name(file_name) # find how to get file name
-      puts 'file_details'
-      puts file_details
-      # binding.pry
+      file_details = parse_file_name(file_name)
 
       return false unless file_details.present?
 
-      # file = File.open(BASE_PATH + file_name)
-      # file = s3.bucket("Form1095Bucket").object(fileName) # todo: uncomment when s3 available
+      # downloads S3 file into local file, allows for processing large files this way
+      temp_file_name = "lib/form1095_b/temp_files/#{file_name}"
+      begin
+        file = bucket.object(file_name).get(response_target: temp_file_name)
 
-      # puts 'file class:'
-      # puts file.class
+        file = File.open(temp_file_name, "r")
 
-      # data comes as string???
-      # contents = file.read
-      # contents = file.data # todo: uncomment when s3 available
+        file.each_line do |form|
+          data = parse_form(form)
 
+          data[:tax_year] = file_details[:tax_year]
+          data[:is_corrected] = !file_details[:isOg?]
+          data[:is_beneficiary] = file_details[:is_dep_file?]
+          unique_id = data[:unique_id]
+          data.delete(:unique_id)
 
-      # binding.pry
-
-      # return true unless contents # return true to show that file has been read
-
-      # todo: get file contents
-      contents = @s3.get_object(bucket: BUCKET, key: file_name).body
-
-      puts 'contents'
-      puts contents.class
-
-      # forms = contents.split("\n")
-      contents.each_line do |form|
-        # puts 'form'
-        # puts form
-        data = parse_form(form)
-        puts "data"
-        puts data
-        # binding.pry
-        unless save_data?(data, file_details[:tax_year], file_details[:isOg?], file_details[:is_dep_file?])
-          puts "failed on form with unique ID: #{data[:unique_id]}"
-          return false
+          unless save_data?(data)
+            Rails.logger.error "Failed on form with unique ID: #{unique_id}"
+            return false
+          end
         end
-      end
 
-      contents.close
+        File.delete(file)
+        file.close
+      rescue => e
+        Rails.logger.error(e.message)
+        return false
+      end
 
       true
     end
 
+
     def perform
-      puts 'Performing!!!!!'
+      Rails.logger.info "Checking for new 1095-B data"
 
-      @s3 = Aws::S3::Client.new
-
-      binding.pry
-
-      # File.open('new_file.txt', "w+") {|f| f.write("hi there :)")}
-      #
-      # puts "wrote to file"
-      # return
-
-      # get file names
       file_names = get_bucket_files
-      # fileNames = getBucketFiles
-
-      puts 'fileNames'
-      puts file_names
-      # binding.pry
-      puts "No files found" if file_names.empty?
+      Rails.logger.info "No new 1095 files found" if file_names.empty?
 
       file_names.each do |file_name|
         if process_file?(file_name)
-          # todo: delete file from bucket
-          puts "#{file_name} read successfully, deleting file from S3..."
-          @s3.delete_object({ key: file_name, bucket: BUCKET })
+          Rails.logger.info "#{file_name} read successfully, deleting file from S3"
+          bucket.delete_objects(delete: { objects: [{ key: file_name }] })
         else
-          puts "failed to load data from file: #{file_name}"
+          Rails.logger.error "failed to load 1095 data from file: #{file_name}"
         end
       end
-
     end
   end
 end
