@@ -19,7 +19,7 @@ module MhvInheritedProofing::Mhv
     private
 
     def correlation_id
-      mhv_api_request(correlation_id_url, 'correlationId')
+      user.mhv_correlation_id.presence || mhv_api_request(correlation_id_url, 'correlationId')
     end
 
     def identity_document_exists?
