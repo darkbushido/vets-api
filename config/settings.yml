@@ -426,6 +426,9 @@ mhv:
     collection_caching_enabled: true
   account:
     mock: false
+  inherited_proofing:
+    valid_id_url: https://essapi-sysb.myhealth.va.gov/mhv-api/patient/v1/multicorr/validmhvid
+    vacct_info_url: https://essapi-sysb.myhealth.va.gov/mhv-api/patient/v1/multicorr/mhvacctinfo
 
 # Settings for alternate MHV integration for mobile app
 mhv_mobile:
