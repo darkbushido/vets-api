@@ -11,7 +11,7 @@ module MhvInheritedProofing::Mhv
         :get, "#{config.valid_id_url}/#{ICN}", nil, { 'appToken' => config.app_token, 'Content-Type' => 'application/json', 'Accept' => 'application/json' }
       )
       response['correlationId']
-    rescue e
+    rescue Common::Client::Errors::ClientError => e
       raise e
     end
   end
