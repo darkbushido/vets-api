@@ -59,7 +59,7 @@ module MPI
     # @param user [UserIdentity] the user to query MVI for
     # @return [MPI::Responses::FindProfileResponse] the parsed response from MVI.
     # rubocop:disable Metrics/MethodLength
-    def find_profile(user_identity, search_type = MPI::Constants::CORRELATION_WITH_RELATIONSHIP_DATA, orch_search: false)
+    def find_profile(user_identity, search_type = MPI::Constants::CORRELATION_WITH_RELATIONSHIP_DATA, orch_search = false)
       profile_message = create_profile_message(user_identity, search_type: search_type, orch_search: orch_search)
       with_monitoring do
         measure_info(user_identity) do
@@ -183,7 +183,7 @@ module MPI
       MPI::Messages::FindProfileMessageEdipi.new(user_identity.edipi, search_type: search_type).to_xml
     end
 
-    def message_user_attributes(user_identity, search_type, orch_search: false)
+    def message_user_attributes(user_identity, search_type, orch_search = false)
       Raven.tags_context(mvi_find_profile: 'user_attributes')
 
       given_names = [user_identity.first_name]
@@ -195,12 +195,12 @@ module MPI
         ssn: user_identity.ssn,
         gender: user_identity.gender
       }
-      profile_args = { search_type: search_type }
-      if orch_search == true
-        profile_args[:orch_search] = orch_search
-        profile_args[:edipi] = user_identity.edipi
-      end
-      MPI::Messages::FindProfileMessage.new(profile, profile_args).to_xml
+      MPI::Messages::FindProfileMessage.new(
+        profile,
+        search_type: search_type,
+        orch_search: orch_search,
+        edipi: orch_search == true ? user_identity.edipi : nil
+      ).to_xml
     end
   end
 end
