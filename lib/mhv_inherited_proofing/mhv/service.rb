@@ -35,12 +35,14 @@ module MhvInheritedProofing::Mhv
     end
 
     def mhv_api_request(url, attribute)
-      response = perform(
-        :get, url, nil, { 'appToken' => config.app_token, 'Content-Type' => 'application/json', 'Accept' => 'application/json' }
-      )
+      response = perform(:get, url, nil, headers)
       response[attribute]
     rescue Common::Client::Errors::ClientError => e
       raise e
+    end
+
+    def headers
+      { 'appToken' => config.app_token, 'Content-Type' => 'application/json', 'Accept' => 'application/json' }
     end
   end
 end
