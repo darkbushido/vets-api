@@ -59,7 +59,9 @@ module MPI
     # @param user [UserIdentity] the user to query MVI for
     # @return [MPI::Responses::FindProfileResponse] the parsed response from MVI.
     # rubocop:disable Metrics/MethodLength
-    def find_profile(user_identity, search_type = MPI::Constants::CORRELATION_WITH_RELATIONSHIP_DATA, orch_search = false)
+    def find_profile(user_identity,
+                     search_type = MPI::Constants::CORRELATION_WITH_RELATIONSHIP_DATA,
+                     orch_search: false)
       profile_message = create_profile_message(user_identity, search_type: search_type, orch_search: orch_search)
       with_monitoring do
         measure_info(user_identity) do
@@ -165,7 +167,9 @@ module MPI
       MPI::Messages::AddPersonMessage.new(user_identity).to_xml if user_identity.icn_with_aaid.present?
     end
 
-    def create_profile_message(user_identity, search_type: MPI::Constants::CORRELATION_WITH_RELATIONSHIP_DATA, orch_search: false)
+    def create_profile_message(user_identity,
+                               search_type: MPI::Constants::CORRELATION_WITH_RELATIONSHIP_DATA,
+                               orch_search: false)
       return message_icn(user_identity, search_type) if user_identity.mhv_icn.present?
       return message_edipi(user_identity, search_type) if user_identity.edipi.present? && Settings.mvi.edipi_search
       raise Common::Exceptions::ValidationErrors, user_identity unless user_identity.valid?
@@ -183,7 +187,7 @@ module MPI
       MPI::Messages::FindProfileMessageEdipi.new(user_identity.edipi, search_type: search_type).to_xml
     end
 
-    def message_user_attributes(user_identity, search_type, orch_search = false)
+    def message_user_attributes(user_identity, search_type, orch_search: false)
       Raven.tags_context(mvi_find_profile: 'user_attributes')
 
       given_names = [user_identity.first_name]
