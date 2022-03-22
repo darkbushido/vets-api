@@ -309,12 +309,6 @@ describe MPI::Service do
   end
 
   describe '.find_profile with edipi', run_at: 'Wed, 21 Feb 2018 20:19:01 GMT' do
-    around do |example|
-      Settings.mvi.edipi_search = true
-      example.run
-      Settings.mvi.edipi_search = false
-    end
-
     before do
       expect(MPI::Messages::FindProfileMessageEdipi).to receive(:new).once.and_call_original
     end

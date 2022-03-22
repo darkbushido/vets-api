@@ -9,9 +9,12 @@ module MPI
       include FindProfileMessageHelpers
       attr_reader :edipi, :search_type
 
-      def initialize(edipi, search_type: MPI::Constants::CORRELATION_WITH_RELATIONSHIP_DATA)
+      def initialize(edipi,
+                     search_type: MPI::Constants::CORRELATION_WITH_RELATIONSHIP_DATA,
+                     orch_search: false)
         @edipi = edipi
         @search_type = search_type
+        @orch_search = orch_search
       end
 
       private

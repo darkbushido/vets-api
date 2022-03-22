@@ -170,19 +170,19 @@ module MPI
     def create_profile_message(user_identity,
                                search_type: MPI::Constants::CORRELATION_WITH_RELATIONSHIP_DATA,
                                orch_search: false)
-      return message_icn(user_identity, search_type) if user_identity.mhv_icn.present?
-      return message_edipi(user_identity, search_type) if user_identity.edipi.present? && Settings.mvi.edipi_search
+      return message_icn(user_identity, search_type, orch_search: orch_search) if user_identity.mhv_icn.present?
+      return message_edipi(user_identity, search_type, orch_search: orch_search) if user_identity.edipi.present?
       raise Common::Exceptions::ValidationErrors, user_identity unless user_identity.valid?
 
       message_user_attributes(user_identity, search_type, orch_search: orch_search)
     end
 
-    def message_icn(user_identity, search_type)
+    def message_icn(user_identity, search_type, orch_search: false)
       Raven.tags_context(mvi_find_profile: 'icn')
       MPI::Messages::FindProfileMessageIcn.new(user_identity.mhv_icn, search_type: search_type).to_xml
     end
 
-    def message_edipi(user_identity, search_type)
+    def message_edipi(user_identity, search_type, orch_search: false)
       Raven.tags_context(mvi_find_profile: 'edipi')
       MPI::Messages::FindProfileMessageEdipi.new(user_identity.edipi, search_type: search_type).to_xml
     end
