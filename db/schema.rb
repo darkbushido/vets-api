@@ -490,20 +490,6 @@ ActiveRecord::Schema.define(version: 2022_02_23_000748) do
     t.index ["claim_guid"], name: "index_form1010cg_submissions_on_claim_guid", unique: true
   end
 
-  create_table "form1095_b_beneficiaries", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
-    t.uuid "form1095_b_id", null: false
-    t.string "first_name"
-    t.string "last_name"
-    t.string "middle_name"
-    t.string "ssn"
-    t.date "birth_date"
-    t.boolean "coverage_months", null: false, array: true
-    t.boolean "isCorrected", default: false
-    t.datetime "created_at", precision: 6, null: false
-    t.datetime "updated_at", precision: 6, null: false
-    t.index ["form1095_b_id"], name: "index_form1095_b_beneficiaries_on_form1095_b_id"
-  end
-
   create_table "form1095_bs", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "veteran_icn", null: false
     t.string "first_name", null: false
@@ -520,11 +506,11 @@ ActiveRecord::Schema.define(version: 2022_02_23_000748) do
     t.string "foreign_zip"
     t.boolean "coverage_months", null: false, array: true
     t.integer "tax_year", null: false
-    t.datetime "last_modified", null: false
-    t.boolean "isCorrected", default: false
+    t.boolean "is_corrected", default: false
+    t.boolean "is_beneficiary", default: false
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
-    t.index ["veteran_icn"], name: "index_form1095_bs_on_veteran_icn"
+    t.index ["veteran_icn", "tax_year"], name: "index_form1095_bs_on_veteran_icn_and_tax_year", unique: true
   end
 
   create_table "form526_job_statuses", id: :serial, force: :cascade do |t|

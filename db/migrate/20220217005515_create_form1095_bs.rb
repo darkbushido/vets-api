@@ -15,7 +15,7 @@ class CreateForm1095Bs < ActiveRecord::Migration[6.1]
       t.string :zip_code
       t.string :province
       t.string :foreign_zip
-      t.boolean :coverage_months, array:true, null: false
+      t.boolean :coverage_months, array: true, null: false
       t.integer :tax_year, null: false
       t.boolean :is_corrected, default: false
       t.boolean :is_beneficiary, default: false
