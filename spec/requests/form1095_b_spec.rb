@@ -1,7 +1,10 @@
+# frozen_string_literal: true
+
 require 'rails_helper'
 
 RSpec.describe Form1095B, type: :request do
   subject { create :form1095_b }
+  
   let(:user) { build(:user, :loa3, icn: subject.veteran_icn) }
   let(:invalid_user) { build(:user, :loa1, icn: subject.veteran_icn) }
   let(:user_without_form) { build(:user, :loa3, icn: '7832473474389') }

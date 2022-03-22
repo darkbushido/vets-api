@@ -17,7 +17,6 @@ class Form1095B < ApplicationRecord
     generate_pdf
   end
 
-
   private
 
   def generate_pdf
@@ -39,17 +38,17 @@ class Form1095B < ApplicationRecord
         "topmostSubform[0].Page1[0].Part1Contents[0].Line1[0].f1_01[0]": first_name,
         "topmostSubform[0].Page1[0].Part1Contents[0].Line1[0].f1_02[0]": middle_name,
         "topmostSubform[0].Page1[0].Part1Contents[0].Line1[0].f1_03[0]": last_name,
-        "topmostSubform[0].Page1[0].Part1Contents[0].f1_04[0]": ssn || "",
-        "topmostSubform[0].Page1[0].Part1Contents[0].f1_05[0]": ssn ? "" : birth_date,
+        "topmostSubform[0].Page1[0].Part1Contents[0].f1_04[0]": ssn || '',
+        "topmostSubform[0].Page1[0].Part1Contents[0].f1_05[0]": ssn ? '' : birth_date,
         "topmostSubform[0].Page1[0].Part1Contents[0].f1_06[0]": address,
         "topmostSubform[0].Page1[0].Part1Contents[0].f1_07[0]": city,
         "topmostSubform[0].Page1[0].Part1Contents[0].f1_08[0]": state ? state : province, 
-        "topmostSubform[0].Page1[0].Part1Contents[0].f1_09[0]": country + " " + (zip_code || foreign_zip),
+        "topmostSubform[0].Page1[0].Part1Contents[0].f1_09[0]": country + ' ' + (zip_code || foreign_zip),
         "topmostSubform[0].Page1[0].Table1_Part4[0].Row23[0].f1_25[0]": first_name,
         "topmostSubform[0].Page1[0].Table1_Part4[0].Row23[0].f1_26[0]": middle_name ? middle_name[0] : "",
         "topmostSubform[0].Page1[0].Table1_Part4[0].Row23[0].f1_27[0]": last_name,
-        "topmostSubform[0].Page1[0].Table1_Part4[0].Row23[0].f1_28[0]": ssn || "",
-        "topmostSubform[0].Page1[0].Table1_Part4[0].Row23[0].f1_29[0]": ssn ? "" : birth_date, 
+        "topmostSubform[0].Page1[0].Table1_Part4[0].Row23[0].f1_28[0]": ssn || '',
+        "topmostSubform[0].Page1[0].Table1_Part4[0].Row23[0].f1_29[0]": ssn ? '' : birth_date, 
         "topmostSubform[0].Page1[0].Table1_Part4[0].Row23[0].c1_01[0]": coverage_months[0] && 1,
         "topmostSubform[0].Page1[0].Table1_Part4[0].Row23[0].c1_02[0]": coverage_months[1] && 1,
         "topmostSubform[0].Page1[0].Table1_Part4[0].Row23[0].c1_03[0]": coverage_months[2] && 1,

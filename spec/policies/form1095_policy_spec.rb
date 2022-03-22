@@ -39,10 +39,11 @@ describe Form1095Policy do
 
     context 'with a user who does not have an ICN' do
       let(:user) { build(:user, :loa1, icn: nil) }
-    
+
       it 'denies access' do
         expect(subject).not_to permit(user, :form1095)
       end
     end
   end
+  
 end

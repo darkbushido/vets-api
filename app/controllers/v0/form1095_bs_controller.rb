@@ -2,7 +2,6 @@
 
 module V0
   class Form1095BsController < ApplicationController
-
     before_action { authorize :form1095, :access? }
     before_action :get_1095b
 
@@ -33,4 +32,5 @@ module V0
     end
     
   end
+  
 end

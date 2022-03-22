@@ -15,7 +15,6 @@ RSpec.describe Form1095B, type: :model do
         end
       end
     end
-    
   end
 
   describe 'pdf_testing' do
@@ -31,7 +30,6 @@ RSpec.describe Form1095B, type: :model do
         expect { inv_year_form.get_pdf }.to raise_error(RuntimeError, /1095-B for tax year 2008 not supported/) #(PdfForms::PdftkError)
       end
     end
-
   end
 
 end
