@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
-require 'mhv_inherited_proofing/mhv/configuration'
+require 'inherited_proofing/mhv/configuration'
 
-module MhvInheritedProofing::Mhv
+module InheritedProofing::MHV
   class Service < Common::Client::Base
-    configuration MhvInheritedProofing::Mhv::Configuration
+    configuration InheritedProofing::MHV::Configuration
 
     attr_reader :user
 
@@ -19,6 +19,7 @@ module MhvInheritedProofing::Mhv
     private
 
     def correlation_id
+      binding.pry
       user.mhv_correlation_id.presence || mhv_api_request(correlation_id_url, 'correlationId')
     end
 
