@@ -11,12 +11,6 @@ module Form1095
         access_key_id: Settings.form1095_b.s3.aws_access_key_id,
         secret_access_key: Settings.form1095_b.s3.aws_secret_access_key
       ).bucket(Settings.form1095_b.s3.bucket)
-      # @bucket ||= Aws::S3::Resource.new(
-      #   region: 'us-gov-west-1', 
-      #   access_key_id: "ASIAQD72FDTF63A3VAUG",
-      #   secret_access_key: "cQ7SC6SvAFULPxMYhp8xjzK9gFagoQFPdNrto9EX",
-      #   session_token: "FwoDYXdzEHgaDBxU3s1GZvIIF3w9MCKGAdw1ILuU+sqc7BNpUzdteDW/y1Z9Cn9GXMptMNgYqXqzkS0MFCgmOCmF+CQHzAeJPnyOLgES+MiG+bupYKl664PnZh2TfGcNWYD2YWjApGV1nUiHPKJmm1cfVpw4NxZ9VrG+86MTnn79KFkFHJXUdQaykBYM4vPjHh6ZNvTLS+UOuK/zqcXLKLWPw5EGMii8BJXjgSNY/jNhRlYRDFgHDl553+EsgsHw95jwPm3PY62RKIC5bZHi"
-      # ).bucket("dsva-vagov-dev-1095b-form-uploads")
     end
 
 
@@ -26,7 +20,7 @@ module Form1095
     end
 
 
-    def parse_file_name(file_name) # or file...?
+    def parse_file_name(file_name)
       return {} unless file_name.present?
 
       file_values = file_name.sub('.txt', '').split('_')
@@ -51,8 +45,6 @@ module Form1095
     def parse_form(form)
       data = form.split('^')
 
-      # form_type = data[0].sub('FORM=', '')
-      # creation_date = data[1]
       unique_id = data[2]
 
       temp = {}
