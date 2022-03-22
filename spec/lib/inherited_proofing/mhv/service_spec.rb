@@ -69,11 +69,11 @@ describe InheritedProofing::MHV::Service do
     context 'when user is found and verified' do
       let(:identity_data_response) do
         {
-          'mhvId' => 19031205,
+          'mhvId' => 19031205, # rubocop:disable Style/NumericLiterals
           'identityProofedMethod' => 'IPA',
           'identityProofingDate' => '2020-12-14',
           'identityDocumentExist' => true,
-          'identityDocumentInfo' =>  {
+          'identityDocumentInfo' => {
             'primaryIdentityDocumentNumber' => '73929233',
             'primaryIdentityDocumentType' => 'StateIssuedId',
             'primaryIdentityDocumentCountry' => 'United States',
@@ -94,7 +94,7 @@ describe InheritedProofing::MHV::Service do
     context 'when user is found and not verified' do
       let(:identity_data_failed_response) do
         {
-          'mhvId' => 9712240,
+          'mhvId' => 9712240, # rubocop:disable Style/NumericLiterals
           'identityDocumentExist' => false
         }
       end
