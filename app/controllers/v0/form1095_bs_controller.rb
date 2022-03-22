@@ -6,8 +6,6 @@ module V0
     before_action :get_1095b
 
     def last_updated
-      # puts "getting last_updated ts"
-
       render json: { last_updated: @form.updated_at }
     end
     
@@ -30,7 +28,5 @@ module V0
     def download_params
       params.require(:tax_year)
     end
-    
   end
-  
 end
