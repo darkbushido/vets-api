@@ -20,6 +20,7 @@ path 'modules' do
   gem 'openid_auth'
   gem 'test_user_dashboard'
   gem 'va_forms'
+  gem 'va_notify'
   gem 'vaos'
   gem 'vba_documents'
   gem 'veteran'

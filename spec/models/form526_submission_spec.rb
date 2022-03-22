@@ -33,7 +33,7 @@ RSpec.describe Form526Submission do
     context 'when it is all claims' do
       it 'queues an all claims job' do
         expect do
-          subject.start_evss_submission(nil, 'submission_id' => subject.id)
+          subject.start_evss_submission_job
         end.to change(EVSS::DisabilityCompensationForm::SubmitForm526AllClaim.jobs, :size).by(1)
       end
     end
@@ -53,6 +53,8 @@ RSpec.describe Form526Submission do
       context 'Flipper is enabled' do
         before do
           Flipper.enable :disability_hypertension_compensation_fast_track
+          Flipper.enable :rrd_hypertension_compensation
+          Flipper.enable :rrd_asthma_compensation
           Sidekiq::Worker.clear_all
         end
 
@@ -65,11 +67,11 @@ RSpec.describe Form526Submission do
         it_behaves_like '#start_evss_submission'
 
         context 'an exception is raised in the start method' do
-          it 'runs start_evss_submission' do
+          it 'calls start_evss_submission_job' do
             allow(Sidekiq::Batch).to receive(:new).and_raise(NoMethodError)
 
             expect(Rails.logger).to receive(:error)
-            expect(form_for_hypertension).to receive(:start_evss_submission)
+            expect(form_for_hypertension).to receive(:start_evss_submission_job)
             form_for_hypertension.start
           end
         end
@@ -78,6 +80,8 @@ RSpec.describe Form526Submission do
       context 'Flipper is disabled' do
         before do
           Flipper.disable :disability_hypertension_compensation_fast_track
+          Flipper.disable :rrd_hypertension_compensation
+          Flipper.disable :rrd_asthma_compensation
           Sidekiq::Worker.clear_all
         end
 
@@ -100,11 +104,11 @@ RSpec.describe Form526Submission do
     end
   end
 
-  describe '#start_evss_submission' do
+  describe '#start_evss_submission_job' do
     it_behaves_like '#start_evss_submission'
   end
 
-  describe '#start_but_use_a_birls_id_that_hasnt_been_tried_yet!' do
+  describe '#submit_with_birls_id_that_hasnt_been_tried_yet!' do
     before do
       Sidekiq::Worker.clear_all
       Settings.mvi.edipi_search = true
@@ -116,12 +120,12 @@ RSpec.describe Form526Submission do
         expect(subject.birls_ids.count).to eq 1
         subject.birls_ids_tried = { subject.birls_id => ['some timestamp'] }.to_json
         subject.save!
-        expect { subject.start_but_use_a_birls_id_that_hasnt_been_tried_yet! }.to(
+        expect { subject.submit_with_birls_id_that_hasnt_been_tried_yet! }.to(
           change(EVSS::DisabilityCompensationForm::SubmitForm526AllClaim.jobs, :size).by(0)
         )
         next_birls_id = "#{subject.birls_id}cat"
         subject.add_birls_ids next_birls_id
-        expect { subject.start_but_use_a_birls_id_that_hasnt_been_tried_yet! }.to(
+        expect { subject.submit_with_birls_id_that_hasnt_been_tried_yet! }.to(
           change(EVSS::DisabilityCompensationForm::SubmitForm526AllClaim.jobs, :size).by(1)
         )
         expect(subject.birls_id).to eq next_birls_id
@@ -602,6 +606,38 @@ RSpec.describe Form526Submission do
         allow_any_instance_of(User).to receive(:first_name).and_return(test_param[:input])
 
         expect(subject.get_first_name).to eql(test_param[:expected])
+      end
+    end
+
+    context 'when the first name is NOT populated on the User' do
+      before do
+        # Ensure `subject` is called before stubbing `first_name` so that the auth headers are populated correctly
+        subject
+        user_with_nil_first_name = User.create(user)
+        allow(user_with_nil_first_name).to receive(:first_name).and_return nil
+        allow(User).to receive(:find).with(subject.user_uuid).and_return user_with_nil_first_name
+      end
+
+      context 'when name attributes exist in the auth headers' do
+        it 'returns the first name of the user from the auth headers' do
+          expect(subject.get_first_name).to eql('BEYONCE')
+        end
+      end
+
+      context 'when name attributes do NOT exist in the auth headers' do
+        subject { build(:form526_submission, :with_empty_auth_headers) }
+
+        it 'returns nil' do
+          expect(subject.get_first_name).to be nil
+        end
+      end
+    end
+
+    context 'when the User is NOT found' do
+      before { allow(User).to receive(:find).and_return nil }
+
+      it 'returns the first name of the user from the auth headers' do
+        expect(subject.get_first_name).to eql('BEYONCE')
       end
     end
   end

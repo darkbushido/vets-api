@@ -158,6 +158,7 @@ RSpec.describe 'user', type: :request do
             disabilityRating
             lettersAndDocuments
             militaryServiceHistory
+            paymentHistory
             userProfileUpdate
             directDepositBenefitsUpdate
           ]
@@ -174,6 +175,7 @@ RSpec.describe 'user', type: :request do
             disabilityRating
             lettersAndDocuments
             militaryServiceHistory
+            paymentHistory
             userProfileUpdate
             secureMessaging
           ]
@@ -233,6 +235,7 @@ RSpec.describe 'user', type: :request do
             %w[
               appeals
               appointments
+              paymentHistory
               userProfileUpdate
             ]
           )
@@ -258,6 +261,29 @@ RSpec.describe 'user', type: :request do
               claims
               disabilityRating
               lettersAndDocuments
+              militaryServiceHistory
+              paymentHistory
+              userProfileUpdate
+            ]
+          )
+        end
+      end
+
+      context 'with a user who does not have access to bgs' do
+        before do
+          iam_sign_in(FactoryBot.build(:iam_user, :no_participant_id))
+          VCR.use_cassette('payment_information/payment_information') do
+            VCR.use_cassette('user/get_facilities_no_ids', match_requests_on: %i[method uri]) do
+              get '/mobile/v0/user', headers: iam_headers
+            end
+          end
+        end
+
+        it 'does not include paymentHistory' do
+          expect(attributes['authorizedServices']).to eq(
+            %w[
+              appeals
+              appointments
               militaryServiceHistory
               userProfileUpdate
             ]
@@ -383,6 +409,48 @@ RSpec.describe 'user', type: :request do
               }
             ]
           }
+        )
+      end
+    end
+
+    context 'with no upstream errors for logingov user' do
+      before do
+        iam_sign_in(FactoryBot.build(:iam_user, :logingov))
+        VCR.use_cassette('payment_information/payment_information') do
+          VCR.use_cassette('user/get_facilities') do
+            get '/mobile/v0/user', headers: iam_headers
+          end
+        end
+      end
+
+      let(:attributes) { response.parsed_body.dig('data', 'attributes') }
+
+      it 'returns an ok response' do
+        expect(response).to have_http_status(:ok)
+      end
+
+      it 'returns a user profile response with the expected schema' do
+        expect(response.body).to match_json_schema('user')
+      end
+
+      it 'includes sign-in service' do
+        expect(attributes['profile']['signinService']).to eq('IDME')
+      end
+
+      it 'includes the service the user has access to' do
+        expect(attributes['authorizedServices']).to eq(
+          %w[
+            appeals
+            appointments
+            claims
+            directDepositBenefits
+            disabilityRating
+            lettersAndDocuments
+            militaryServiceHistory
+            paymentHistory
+            userProfileUpdate
+            directDepositBenefitsUpdate
+          ]
         )
       end
     end

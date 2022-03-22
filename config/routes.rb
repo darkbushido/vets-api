@@ -13,6 +13,16 @@ Rails.application.routes.draw do
       constraints: ->(request) { V1::SessionsController::REDIRECT_URLS.include?(request.path_parameters[:type]) }
   get '/v1/sessions/ssoe_logout', to: 'v1/sessions#ssoe_slo_callback'
 
+  get '/sign_in/:type/authorize',
+      to: 'sign_in#authorize',
+      constraints: ->(request) { SignInController::REDIRECT_URLS.include?(request.path_parameters[:type]) }
+  get '/sign_in/:type/callback',
+      to: 'sign_in#callback',
+      constraints: ->(request) { SignInController::REDIRECT_URLS.include?(request.path_parameters[:type]) }
+  post '/sign_in/refresh', to: 'sign_in#refresh'
+  post '/sign_in/token', to: 'sign_in#token'
+  get '/sign_in/introspect', to: 'sign_in#introspect'
+
   namespace :v0, defaults: { format: 'json' } do
     resources :onsite_notifications, only: %i[create index update]
 
@@ -31,7 +41,7 @@ Rails.application.routes.draw do
     get 'form1095_bs/download/:tax_year', to: 'form1095_bs#download'
     get 'form1095_bs/last_updated/:tax_year', to: 'form1095_bs#last_updated'
 
-    resources :medical_copays, only: :index
+    resources :medical_copays, only: %i[index show]
     get 'medical_copays/get_pdf_statement_by_id/:statement_id', to: 'medical_copays#get_pdf_statement_by_id'
 
     resources :apps, only: %i[index show]
@@ -341,7 +351,9 @@ Rails.application.routes.draw do
     namespace :coe do
       get 'status'
       get 'download_coe'
+      get 'documents'
       post 'submit_coe_claim'
+      post 'document_upload'
     end
   end
 

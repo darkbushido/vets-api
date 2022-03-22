@@ -7,7 +7,9 @@ class SavedClaim::CoeClaim < SavedClaim
 
   FORM = '26-1880'
 
-  def send_to_lgy
+  def send_to_lgy(edipi:, icn:)
+    @edipi = edipi
+    @icn = icn
     lgy_service.put_application(payload: prepare_form_data)
     log_message_to_sentry(
       "COE claim submitted to LGY: #{guid}",
@@ -15,7 +17,7 @@ class SavedClaim::CoeClaim < SavedClaim
       { attachment_id: guid },
       { team: 'vfs-ebenefits' }
     )
-    # process_attachments!
+    process_attachments!
   end
 
   def regional_office
@@ -29,10 +31,10 @@ class SavedClaim::CoeClaim < SavedClaim
     form_copy = {
       'status' => 'SUBMITTED',
       'veteran' => {
-        'firstName' => parsed_form['fullName']['firstName'],
-        'middleName' => parsed_form['fullName']['middleName'],
-        'lastName' => parsed_form['fullName']['lastName'],
-        'suffixName' => parsed_form['fullName']['suffixName'],
+        'firstName' => parsed_form['fullName']['first'],
+        'middleName' => parsed_form['fullName']['middle'],
+        'lastName' => parsed_form['fullName']['last'],
+        'suffixName' => parsed_form['fullName']['suffix'],
         'mailingAddress1' => parsed_form['applicantAddress']['street'],
         'mailingAddress2' => parsed_form['applicantAddress']['street2'],
         'mailingCity' => parsed_form['applicantAddress']['city'],
@@ -59,7 +61,7 @@ class SavedClaim::CoeClaim < SavedClaim
   # rubocop:enable Metrics/MethodLength
 
   def lgy_service
-    @lgy_service ||= LGY::Service.new(edipi: @current_user.edipi, icn: @current_user.icn)
+    @lgy_service ||= LGY::Service.new(edipi: @edipi, icn: @icn)
   end
 
   # rubocop:disable Metrics/MethodLength
@@ -93,12 +95,63 @@ class SavedClaim::CoeClaim < SavedClaim
 
   def periods_of_service(form_copy)
     parsed_form['periodsOfService'].each do |service_info|
+      # values from the FE for military_branch are:
+      # ["Air Force", "Air Force Reserve", "Air National Guard", "Army", "Army National Guard", "Army Reserve",
+      # "Coast Guard", "Coast Guard Reserve", "Marine Corps", "Marine Corps Reserve", "Navy", "Navy Reserve"]
+      # these need to be formatted because LGY only accepts [ARMY, NAVY, MARINES, AIR_FORCE, COAST_GUARD, OTHER]
+      # and then we have to pass in ACTIVE_DUTY or RESERVE_NATIONAL_GUARD for service_type
+      military_branch = service_info['serviceBranch'].parameterize.underscore.upcase
+      service_type = 'ACTIVE_DUTY'
+
+      %w[RESERVE NATIONAL_GUARD].any? do |service_branch|
+        next unless military_branch.include?(service_branch)
+
+        index = military_branch.index('_NATIONAL_GUARD') || military_branch.index('_RESERVE')
+        military_branch = military_branch[0, index]
+        military_branch = 'AIR_FORCE' if military_branch == 'AIR' # Air National Guard is the only one that needs this
+        service_type = 'RESERVE_NATIONAL_GUARD'
+      end
+
       form_copy['periodsOfService'] << {
         'enteredOnDuty' => service_info['dateRange']['from'],
         'releasedActiveDuty' => service_info['dateRange']['to'],
-        'militaryBranch' => service_info['militaryBranch'].parameterize.underscore.upcase,
+        'militaryBranch' => military_branch,
+        'serviceType' => service_type,
         'disabilityIndicator' => false
       }
+    end
+  end
+
+  def process_attachments!
+    supporting_documents = parsed_form['files']
+    if supporting_documents.present?
+      files = PersistentAttachment.where(guid: supporting_documents.map { |doc| doc['confirmationCode'] })
+      files.find_each { |f| f.update(saved_claim_id: id) }
+
+      prepare_document_data
+    end
+  end
+
+  def prepare_document_data
+    persistent_attachments.each do |attachment|
+      file_extension = File.extname(URI.parse(attachment.file.url).path)
+
+      if %w[.jpg .jpeg .png .pdf].include? file_extension.downcase
+        file_path = Common::FileHelpers.generate_temp_file(attachment.file.read)
+
+        File.rename(file_path, "#{file_path}#{file_extension}")
+        file_path = "#{file_path}#{file_extension}"
+
+        document_data = {
+          'documentType' => file_extension,
+          'description' => parsed_form['fileType'],
+          'contentsBase64' => Base64.encode64(File.read(file_path)),
+          'fileName' => attachment.file.metadata['filename']
+        }
+
+        lgy_service.post_document(payload: document_data)
+        Common::FileHelpers.delete_file_if_exists(file_path)
+      end
     end
   end
 end

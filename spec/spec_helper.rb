@@ -67,6 +67,7 @@ unless ENV['NOCOVERAGE']
     add_group 'Swagger', 'app/swagger'
     add_group 'TestUserDashboard', 'modules/test_user_dashboard/'
     add_group 'Uploaders', 'app/uploaders'
+    add_group 'VaNotify', 'modules/va_notify/'
     add_group 'VAOS', 'modules/vaos/'
     add_group 'VAForms', 'modules/va_forms/'
     add_group 'VBADocuments', 'modules/vba_documents/'

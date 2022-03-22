@@ -16,13 +16,13 @@ module RapidReadyForDecision
 
     sidekiq_retries_exhausted do |msg, _ex|
       submission_id = msg['args'].first
-      submission = Form526Submission.new
-      submission.start_evss_submission(nil, { 'submission_id' => submission_id })
+      submission = Form526Submission.find(submission_id)
+      submission.start_evss_submission_job
     end
 
     STATSD_KEY_PREFIX = 'worker.fast_track.disability_compensation_job'
 
-    def perform(form526_submission_id, full_name)
+    def perform(form526_submission_id)
       form526_submission = Form526Submission.find(form526_submission_id)
 
       begin
@@ -31,7 +31,7 @@ module RapidReadyForDecision
 
           return if bp_readings(client).blank?
 
-          pdf = pdf(full_name, bp_readings(client), medications(client))
+          pdf = pdf(patient_info(form526_submission), bp_readings(client), medications(client))
           upload_pdf_and_attach_special_issue(form526_submission, pdf)
         end
       rescue => e
@@ -46,13 +46,17 @@ module RapidReadyForDecision
 
     private
 
+    def patient_info(form526_submission)
+      form526_submission.full_name.merge(birthdate: form526_submission.auth_headers['va_eauth_birthdate'])
+    end
+
     def bp_readings(client)
       @bp_readings ||= client.list_resource('observations')
       @bp_readings.present? ? RapidReadyForDecision::HypertensionObservationData.new(@bp_readings).transform : []
     end
 
     def medications(client)
-      @medications ||= client.list_resource('medications')
+      @medications ||= client.list_resource('medication_requests')
       @medications.present? ? RapidReadyForDecision::HypertensionMedicationRequestData.new(@medications).transform : []
     end
 
@@ -81,24 +85,23 @@ module RapidReadyForDecision
     end
 
     def account(form526_submission)
-      user_uuid = form526_submission.user_uuid.presence
+      account = Account.lookup_by_user_uuid(form526_submission.user_uuid)
+      return account if account
+
       edipi = form526_submission.auth_headers['va_eauth_dodedipnid'].presence
-      # rubocop:disable Lint/UselessAssignment
-      account = Account.find_by(idme_uuid: user_uuid) if user_uuid
-      account ||= Account.find_by(logingov_uuid: user_uuid) if user_uuid
-      account ||= Account.find_by(edipi: edipi) if edipi
-      # rubocop:enable Lint/UselessAssignment
+      Account.find_by(edipi: edipi) if edipi
     end
 
     def upload_pdf_and_attach_special_issue(form526_submission, pdf)
       RapidReadyForDecision::HypertensionUploadManager.new(form526_submission).handle_attachment(pdf.render)
-      if Flipper.enabled?(:disability_hypertension_compensation_fast_track_add_rrd)
+      if Flipper.enabled?(:disability_hypertension_compensation_fast_track_add_rrd) ||
+         Flipper.enabled?(:rrd_add_special_issue)
         RapidReadyForDecision::HypertensionSpecialIssueManager.new(form526_submission).add_special_issue
       end
     end
 
-    def pdf(full_name, bpreadings, medications)
-      RapidReadyForDecision::HypertensionPdfGenerator.new(full_name, bpreadings, medications).generate
+    def pdf(patient_info, bpreadings, medications)
+      RapidReadyForDecision::HypertensionPdfGenerator.new(patient_info, bpreadings, medications).generate
     end
   end
 end

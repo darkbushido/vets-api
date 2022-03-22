@@ -2,9 +2,9 @@
 
 module RapidReadyForDecision
   class HypertensionPdfGenerator
-    def initialize(patient, blood_pressure_data, medications)
+    def initialize(patient_info, blood_pressure_data, medications)
       @pdf = Prawn::Document.new
-      @patient = patient
+      @patient_info = patient_info
       @blood_pressure_data = blood_pressure_data
       @medications = medications
       @date = Time.zone.today
@@ -34,17 +34,21 @@ module RapidReadyForDecision
     end
 
     def add_intro
-      names = @patient.with_indifferent_access
-      full_name = [names[:first], names[:middle], names[:last]].reject(&:blank?).join ' '
-      patient_name = [full_name, names[:suffix]].reject(&:blank?).join ', '
+      patient_info = @patient_info.with_indifferent_access
+      full_name = [patient_info[:first], patient_info[:middle], patient_info[:last]].reject(&:blank?).join ' '
+      patient_name = [full_name, patient_info[:suffix]].reject(&:blank?).join ', '
+      birthdate = patient_info[:birthdate]
       generated_time = Time.now.getlocal
       generated_at = "#{generated_time.strftime('%m/%d/%Y')} at #{generated_time.strftime('%l:%M %p %Z')}"
 
       intro_lines = [
         "<font size='11'>Hypertension Rapid Ready for Decision | Claim for Increase</font>\n",
         "<font size='22'>VHA Hypertension Data Summary for</font>",
-        "<font size='22'>#{patient_name}</font>\n",
-        "<font size='10'><i>Generated automatically on #{generated_at}<i>\n"
+        "<font size='10'><i>Generated automatically on #{generated_at}</i></font>\n",
+        "<font size='11'>\n</font>",
+        "<font size='14'>#{patient_name}</font>\n",
+        birthdate ? "<font size='11'>DOB: #{birthdate}</font>\n" : '',
+        "<font size='11'>\n</font>"
       ]
 
       intro_lines.each do |line|
@@ -61,8 +65,8 @@ module RapidReadyForDecision
       search_window = "VHA records searched from #{start_date} to #{end_date}"
       bp_intro_lines = [
         "<font size='16'>#{header}</font>",
-        "<font size='11'><i>#{search_window}<i></font>",
-        "<font size='11'><i>All VAMC locations using VistA/CAPRI were checked<i></font>",
+        "<font size='11'><i>#{search_window}</i></font>",
+        "<font size='11'><i>All VAMC locations using VistA/CAPRI were checked</i></font>",
         "\n",
         bp_note
       ]
@@ -78,10 +82,13 @@ module RapidReadyForDecision
 
     def add_blood_pressure_list
       @blood_pressure_data.each do |bp|
-        @pdf.text "<b>Blood pressure: #{bp[:systolic]['value']}/#{bp[:diastolic]['value']} #{bp[:systolic]['unit']}",
+        systolic = bp[:systolic]['value'].round
+        diastolic = bp[:diastolic]['value'].round
+
+        @pdf.text "<b>Blood pressure: #{systolic}/#{diastolic}</b>",
                   inline_format: true, size: 11
-        @pdf.text "Taken on: #{bp[:issued].to_date.strftime('%m/%d/%Y')} " \
-                  "at #{Time.iso8601(bp[:issued]).strftime('%H:%M %Z')}",
+        @pdf.text "Taken on: #{bp[:effectiveDateTime].to_date.strftime('%m/%d/%Y')} " \
+                  "at #{Time.iso8601(bp[:effectiveDateTime]).strftime('%H:%M %Z')}",
                   size: 11
         @pdf.text "Location: #{bp[:organization] || 'Unknown'}", size: 11
         @pdf.text "\n", size: 8
@@ -100,7 +107,7 @@ module RapidReadyForDecision
 
       @pdf.text "\n"
       @pdf.text RATING_SCHEDULE_LINK,
-                inline_format: true, color: '0000ff', size: 1
+                inline_format: true, color: '0000ff', size: 12
     end
 
     def add_medications_intro
@@ -140,8 +147,8 @@ module RapidReadyForDecision
     end
 
     def add_about
-      @pdf.text  "\n"
-      @pdf.text  'About this Document', size: 14
+      @pdf.start_new_page
+      @pdf.text 'About this Document', size: 14
       ABOUT_LINES.each do |line|
         @pdf.text line, size: 11, inline_format: true
       end
@@ -158,12 +165,21 @@ module RapidReadyForDecision
       '<link href="https://www.ecfr.gov/current/title-38/chapter-I/part-3/' \
       'subpart-A/subject-group-ECFR7629a1b1e9bf6f8/section-3.159"><color rgb="0000ff">' \
       'operationalize existing statutory rules</color><link> in 38 U.S.C § 5103a(d).',
-      "\n",
-      'Not included in this document:',
+      ' ',
+      '<font size="13">Some medical data are not included in this PDF. Please check for' \
+      'additional readings and sources.</font>',
+      'This summary does not check all sources of medical information for Veterans that' \
+      'are necessary for you to rate this claim' \
+      'accurately. You will need to check these sources manually to gather all available evidence.',
+      ' ',
+      '<b>Clinical notes.</b> This data may not match all the medical evidence in CAPRI. ' \
+      'For example, it may not find blood pressure readings entered into clinical notes.',
+      ' ',
+      '<b>Data outside of VAMC CAPRI or VistA.</b> This report does not check the following sources:',
       ' •  Private medical records',
-      ' •  VAMC data for clinics using CERNER Electronic Health Record system ' \
-      '(Replacing VistA, but currently only used at Mann-Grandstaff VA Medical Center in Spokane, Washington)',
-      ' •  JLV/Department of Defense medical records'
+      ' •  VAMC data for clinics using CERNER EHR',
+      ' •  Department of Defense/JVL medical data',
+      ' •  Documents in the Veteran\'s VBMS eFolder'
     ].freeze
 
     RATING_SCHEDULE = [

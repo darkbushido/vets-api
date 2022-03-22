@@ -19,9 +19,11 @@ RSpec.describe 'payment_history', type: :request do
   describe 'GET /mobile/v0/payment-history' do
     context 'with successful response with the default (no) parameters' do
       before do
-        VCR.use_cassette('payment_history/retrieve_payment_summary_with_bdn', match_requests_on: %i[method uri]) do
-          get '/mobile/v0/payment-history', headers: iam_headers, params: nil
-        end
+        expect do
+          VCR.use_cassette('payment_history/retrieve_payment_summary_with_bdn', match_requests_on: %i[method uri]) do
+            get '/mobile/v0/payment-history', headers: iam_headers, params: nil
+          end
+        end.to trigger_statsd_increment('mobile.payment_history.index.success', times: 1)
       end
 
       it 'returns 200' do
@@ -111,9 +113,11 @@ RSpec.describe 'payment_history', type: :request do
       let(:params) { { page: { number: 'one', size: 'ten' } } }
 
       before do
-        VCR.use_cassette('payment_history/retrieve_payment_summary_with_bdn', match_requests_on: %i[method uri]) do
-          get '/mobile/v0/payment-history', headers: iam_headers, params: params
-        end
+        expect do
+          VCR.use_cassette('payment_history/retrieve_payment_summary_with_bdn', match_requests_on: %i[method uri]) do
+            get '/mobile/v0/payment-history', headers: iam_headers, params: params
+          end
+        end.to trigger_statsd_increment('mobile.payment_history.index.failure', times: 1)
       end
 
       it 'returns a 422' do
@@ -214,6 +218,67 @@ RSpec.describe 'payment_history', type: :request do
             }
           }
         )
+      end
+    end
+
+    context 'when payments are an empty list' do
+      before do
+        allow_any_instance_of(BGS::PaymentService)
+          .to receive(:payment_history).and_return({ payments: { payment: [] } })
+        get '/mobile/v0/payment-history', headers: iam_headers
+      end
+
+      it 'returns a 200' do
+        expect(response).to have_http_status(:ok)
+      end
+
+      it 'matches expected schema' do
+        expect(response.body).to match_json_schema('payment_history')
+      end
+
+      it 'returns an empty list' do
+        expect(response.parsed_body['data'].size).to eq(0)
+      end
+    end
+
+    context 'when payments return as nil' do
+      before do
+        allow_any_instance_of(BGS::PaymentService)
+          .to receive(:payment_history).and_return(nil)
+        get '/mobile/v0/payment-history', headers: iam_headers
+      end
+
+      it 'returns a 502' do
+        expect(response).to have_http_status(:bad_gateway)
+      end
+
+      it 'lists the invalid params' do
+        expect(response.parsed_body).to eq(
+          {
+            'errors' =>
+              [
+                {
+                  'title' => 'Bad Gateway',
+                  'detail' => 'Received an an invalid response from the upstream server',
+                  'code' => 'MOBL_502_upstream_error', 'status' => '502'
+                }
+              ]
+          }
+        )
+      end
+    end
+
+    context 'with an invalid date in payment history' do
+      before do
+        allow(Rails.logger).to receive(:warn)
+        VCR.use_cassette('payment_history/retrieve_payment_summary_with_bdn_blank_date',
+                         match_requests_on: %i[method uri]) do
+          get '/mobile/v0/payment-history', headers: iam_headers
+        end
+      end
+
+      it 'returns a 200' do
+        expect(response).to have_http_status(:ok)
       end
     end
   end

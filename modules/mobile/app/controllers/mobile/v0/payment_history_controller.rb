@@ -12,7 +12,10 @@ module Mobile
         raise Mobile::V0::Exceptions::ValidationErrors, validated_params if validated_params.failure?
 
         payments = adapter.payments
+        available_years = available_years(payments)
+        payments = filter(payments, available_years, validated_params) unless payments.empty?
         list, meta = paginate(payments, validated_params)
+        meta[:meta][:available_years] = available_years
 
         render json: Mobile::V0::PaymentHistorySerializer.new(list, meta)
       end
@@ -35,11 +38,18 @@ module Mobile
 
       def bgs_service_response
         person = BGS::PeopleService.new(current_user).find_person_by_participant_id
-        BGS::PaymentService.new(current_user).payment_history(person)
+        Rails.logger.info('Mobile Payment History Person not found for user icn: ', current_user.icn) if person.empty?
+        payment_history = BGS::PaymentService.new(current_user).payment_history(person)
+        raise Common::Exceptions::BackendServiceException, 'MOBL_502_upstream_error' if payment_history.nil?
+
+        payment_history
       end
 
-      def paginate(payments, validated_params)
-        available_years = payments.map { |p| p.date.year }.uniq.sort { |a, b| b <=> a }
+      def available_years(payments)
+        payments.map { |p| p.date&.year }.compact.uniq.sort { |a, b| b <=> a }
+      end
+
+      def filter(payments, available_years, validated_params)
         start_date = validated_params[:start_date]
         end_date = validated_params[:end_date]
 
@@ -49,14 +59,17 @@ module Mobile
           end_date = DateTime.new(most_recent_year).end_of_year.utc
         end
 
-        payments_filtered = payments.filter do |payment|
-          payment[:date].between? start_date, end_date
-        end
+        payments.filter do |payment|
+          next if payment[:date].nil? # filter out future scheduled payments
 
+          payment[:date].between?(start_date, end_date)
+        end
+      end
+
+      def paginate(payments, validated_params)
         url = request.base_url + request.path
-        list, meta = Mobile::PaginationHelper.paginate(list: payments_filtered, validated_params: validated_params,
+        list, meta = Mobile::PaginationHelper.paginate(list: payments, validated_params: validated_params,
                                                        url: url)
-        meta[:meta][:available_years] = available_years
 
         [list, meta]
       end

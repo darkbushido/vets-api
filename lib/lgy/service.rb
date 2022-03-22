@@ -19,21 +19,25 @@ module LGY
 
     def coe_status
       if get_determination.body['status'] == 'ELIGIBLE' && get_application.status == 404
-        { status: 'eligible' }
+        { status: 'eligible', reference_number: get_determination.body['reference_number'] }
       elsif get_determination.body['status'] == 'UNABLE_TO_DETERMINE_AUTOMATICALLY' && get_application.status == 404
-        { status: 'unable-to-determine-eligibility' }
+        { status: 'unable-to-determine-eligibility', reference_number: get_determination.body['reference_number'] }
       elsif get_determination.body['status'] == 'ELIGIBLE' && get_application.status == 200
-        { status: 'available', application_create_date: get_application.body['create_date'] }
+        { status: 'available', application_create_date: get_application.body['create_date'],
+          reference_number: get_determination.body['reference_number'] }
       elsif get_determination.body['status'] == 'NOT_ELIGIBLE'
-        { status: 'ineligible' }
+        { status: 'denied', application_create_date: get_determination.body['determination_date'],
+          reference_number: get_determination.body['reference_number'] }
       elsif get_determination.body['status'] == 'PENDING' && get_application.status == 404
         # Kelli said we'll never having a pending status w/o an application, but LGY sqa data is getting hand crafted
-        { status: 'pending' }
+        { status: 'pending', reference_number: get_determination.body['reference_number'] }
       elsif get_determination.body['status'] == 'PENDING' && get_application.body['status'] == 'SUBMITTED'
         # SUBMITTED & RECEIVED ARE COMBINED ON LGY SIDE
-        { status: 'pending', application_create_date: get_application.body['create_date'] }
+        { status: 'pending', application_create_date: get_application.body['create_date'],
+          reference_number: get_determination.body['reference_number'] }
       elsif get_determination.body['status'] == 'PENDING' && get_application.body['status'] == 'RETURNED'
-        { status: 'pending-upload', application_create_date: get_application.body['create_date'] }
+        { status: 'pending-upload', application_create_date: get_application.body['create_date'],
+          reference_number: get_determination.body['reference_number'] }
       end
     end
 
@@ -74,9 +78,6 @@ module LGY
         )
       end
     rescue Common::Client::Errors::ClientError => e
-      # catch any unsuccessful put
-      return e if e.status != 200
-
       raise e
     end
 
@@ -111,6 +112,34 @@ module LGY
       File.delete(filename)
 
       coe_url
+    end
+
+    def post_document(payload:)
+      with_monitoring do
+        perform(
+          :post,
+          "#{end_point}/document?edipi=#{@edipi}&icn=#{@icn}",
+          payload.to_json,
+          request_headers
+        )
+      end
+    rescue Common::Client::Errors::ClientError => e
+      # catch any unsuccessful put
+      return e if e.status != 200
+
+      raise e
+    end
+
+    def get_coe_documents
+      # which will look a lot like get_determination
+      with_monitoring do
+        perform(
+          :get,
+          "#{end_point}/documents",
+          { 'edipi' => @edipi, 'icn' => @icn },
+          request_headers
+        )
+      end
     end
 
     def request_headers

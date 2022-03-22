@@ -23,9 +23,8 @@ RSpec.describe RapidReadyForDecision::DisabilityCompensationJob, type: :worker d
            submitted_claim_id: '600130094')
   end
 
-  let(:user_full_name) { user.full_name_normalized }
   let(:mocked_observation_data) do
-    [{ issued: "#{Time.zone.today.year}-03-23T01:15:52Z",
+    [{ effectiveDateTime: "#{Time.zone.today.year}-06-21T02:42:52Z",
        practitioner: 'DR. THOMAS359 REYNOLDS206 PHD',
        organization: 'LYONS VA MEDICAL CENTER',
        systolic: { 'code' => '8480-6', 'display' => 'Systolic blood pressure', 'value' => 115.0,
@@ -52,7 +51,7 @@ RSpec.describe RapidReadyForDecision::DisabilityCompensationJob, type: :worker d
         it 'returns from the class if the claim observations does NOT include bp readings from the past year' do
           Sidekiq::Testing.inline! do
             expect(RapidReadyForDecision::HypertensionMedicationRequestData).not_to receive(:new)
-            subject.perform_async(submission_for_user_wo_bp.id, user_full_name)
+            subject.perform_async(submission_for_user_wo_bp.id)
           end
         end
       end
@@ -67,7 +66,7 @@ RSpec.describe RapidReadyForDecision::DisabilityCompensationJob, type: :worker d
         it 'finishes successfully' do
           Sidekiq::Testing.inline! do
             expect do
-              RapidReadyForDecision::DisabilityCompensationJob.perform_async(submission.id, user_full_name)
+              RapidReadyForDecision::DisabilityCompensationJob.perform_async(submission.id)
             end.not_to raise_error
           end
         end
@@ -75,14 +74,14 @@ RSpec.describe RapidReadyForDecision::DisabilityCompensationJob, type: :worker d
         it 'creates a job status record' do
           Sidekiq::Testing.inline! do
             expect do
-              RapidReadyForDecision::DisabilityCompensationJob.perform_async(submission.id, user_full_name)
+              RapidReadyForDecision::DisabilityCompensationJob.perform_async(submission.id)
             end.to change(Form526JobStatus, :count).by(1)
           end
         end
 
         it 'marks the new Form526JobStatus record as successful' do
           Sidekiq::Testing.inline! do
-            RapidReadyForDecision::DisabilityCompensationJob.perform_async(submission.id, user_full_name)
+            RapidReadyForDecision::DisabilityCompensationJob.perform_async(submission.id)
             expect(Form526JobStatus.last.status).to eq 'success'
           end
         end
@@ -97,7 +96,7 @@ RSpec.describe RapidReadyForDecision::DisabilityCompensationJob, type: :worker d
           it 'raises a helpful error if the failure is after the api call and emails the engineers' do
             Sidekiq::Testing.inline! do
               expect do
-                RapidReadyForDecision::DisabilityCompensationJob.perform_async(submission.id, user_full_name)
+                RapidReadyForDecision::DisabilityCompensationJob.perform_async(submission.id)
               end.to raise_error(NoMethodError)
               expect(ActionMailer::Base.deliveries.last.subject).to eq 'Rapid Ready for Decision (RRD) Job Errored'
               expect(ActionMailer::Base.deliveries.last.body.raw_source)
@@ -109,7 +108,7 @@ RSpec.describe RapidReadyForDecision::DisabilityCompensationJob, type: :worker d
           it 'creates a job status record' do
             Sidekiq::Testing.inline! do
               expect do
-                RapidReadyForDecision::DisabilityCompensationJob.perform_async(submission.id, user_full_name)
+                RapidReadyForDecision::DisabilityCompensationJob.perform_async(submission.id)
               end.to raise_error(NoMethodError)
               expect(Form526JobStatus.last.status).to eq 'retryable_error'
             end
@@ -130,8 +129,7 @@ RSpec.describe RapidReadyForDecision::DisabilityCompensationJob, type: :worker d
       it 'raises an error' do
         Sidekiq::Testing.inline! do
           expect do
-            RapidReadyForDecision::DisabilityCompensationJob.perform_async(submission_without_account_or_edpid.id,
-                                                                           user_full_name)
+            RapidReadyForDecision::DisabilityCompensationJob.perform_async(submission_without_account_or_edpid.id)
           end.to raise_error RapidReadyForDecision::DisabilityCompensationJob::AccountNotFoundError
         end
       end
@@ -149,7 +147,7 @@ RSpec.describe RapidReadyForDecision::DisabilityCompensationJob, type: :worker d
       it 'finishes successfully' do
         Sidekiq::Testing.inline! do
           expect do
-            subject.perform_async(submission_without_account.id, user_full_name)
+            subject.perform_async(submission_without_account.id)
           end.not_to raise_error
         end
       end
@@ -164,7 +162,7 @@ RSpec.describe RapidReadyForDecision::DisabilityCompensationJob, type: :worker d
       it 'raises AccountNotFoundError exception' do
         Sidekiq::Testing.inline! do
           expect do
-            RapidReadyForDecision::DisabilityCompensationJob.perform_async(submission.id, user_full_name)
+            RapidReadyForDecision::DisabilityCompensationJob.perform_async(submission.id)
           end.to raise_error RapidReadyForDecision::DisabilityCompensationJob::AccountNotFoundError
         end
       end
@@ -178,8 +176,7 @@ RSpec.describe RapidReadyForDecision::DisabilityCompensationJob, type: :worker d
       it 'raises an ArgumentError' do
         Sidekiq::Testing.inline! do
           expect do
-            subject.perform_async(submission.id,
-                                  user_full_name)
+            subject.perform_async(submission.id)
           end.to raise_error(ArgumentError, 'no ICN passed in for LH API request.')
         end
       end

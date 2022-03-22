@@ -36,6 +36,45 @@ describe AppealsApi::PdfConstruction::Generator do
           File.delete(generated_pdf) if File.exist?(generated_pdf)
         end
       end
+
+      context 'v2' do
+        context 'pdf content verification' do
+          let(:nod_v2) { create(:notice_of_disagreement_v2, created_at: '2021-02-03T14:15:16Z') }
+
+          it 'generates the expected pdf' do
+            generated_pdf = described_class.new(nod_v2, version: 'V2').generate
+            expected_pdf = fixture_filepath('expected_10182.pdf', version: 'v2')
+            expect(generated_pdf).to match_pdf expected_pdf
+            File.delete(generated_pdf) if File.exist?(generated_pdf)
+          end
+        end
+
+        context 'pdf extra content verification' do
+          let(:extra_nod_v2) { create(:extra_notice_of_disagreement_v2, created_at: '2021-02-03T14:15:16Z') }
+
+          it 'generates the expected pdf' do
+            data = extra_nod_v2.form_data
+            data['data']['attributes']['extensionReason'] = 'W' * 2300
+            extra_nod_v2.form_data = data
+
+            generated_pdf = described_class.new(extra_nod_v2, version: 'V2').generate
+            expected_pdf = fixture_filepath('expected_10182_extra.pdf', version: 'v2')
+            expect(generated_pdf).to match_pdf expected_pdf
+            File.delete(generated_pdf) if File.exist?(generated_pdf)
+          end
+        end
+
+        context 'pdf minimal content verification' do
+          let(:minimal_nod_v2) { create(:minimal_notice_of_disagreement_v2, created_at: '2021-02-03T14:15:16Z') }
+
+          it 'generates the expected pdf' do
+            generated_pdf = described_class.new(minimal_nod_v2, version: 'V2').generate
+            expected_pdf = fixture_filepath('expected_10182_minimal.pdf', version: 'v2')
+            expect(generated_pdf).to match_pdf expected_pdf
+            File.delete(generated_pdf) if File.exist?(generated_pdf)
+          end
+        end
+      end
     end
 
     context 'Higher Level Review' do
@@ -103,6 +142,28 @@ describe AppealsApi::PdfConstruction::Generator do
             expected_pdf = fixture_filepath('expected_200996_minimum.pdf', version: 'v2')
             # Manually test changes to radio buttons
             expect(generated_pdf).to match_pdf(expected_pdf)
+            File.delete(generated_pdf) if File.exist?(generated_pdf)
+          end
+        end
+
+        context 'special character verification' do
+          it 'allows certain typography characters into Windows-1252' do
+            hlr = build(:minimal_higher_level_review)
+            hlr.form_data['included'][0]['attributes']['issue'] = 'Smartquotes: “”‘’'
+            hlr.save!
+            generated_pdf = described_class.new(hlr, version: 'V2').generate
+            generated_reader = PDF::Reader.new(generated_pdf)
+            expect(generated_reader.pages[1].text).to include 'Smartquotes: “”‘’'
+            File.delete(generated_pdf) if File.exist?(generated_pdf)
+          end
+
+          it 'removes characters that fall outsize Windows-1252 charset that cannot be downgraded' do
+            hlr = build(:minimal_higher_level_review)
+            hlr.form_data['included'][0]['attributes']['issue'] = '∑mer allergies'
+            hlr.save!
+            generated_pdf = described_class.new(hlr, version: 'V2').generate
+            generated_reader = PDF::Reader.new(generated_pdf)
+            expect(generated_reader.pages[1].text).to include 'mer allergies'
             File.delete(generated_pdf) if File.exist?(generated_pdf)
           end
         end
