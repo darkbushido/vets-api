@@ -14,8 +14,15 @@ describe InheritedProofing::MHV::Service do
       'apiCompletionStatus' => 'Successful'
     }
   end
+  let(:correlation_id_error_response) do
+    {
+      'errorCode' => 99,
+      'developerMessage' => '',
+      'message' => 'Unknown application error occurred'
+    }
+  end
 
-  context 'correlation_id api' do
+  describe 'correlation_id api' do
     context 'with existing correlation_id' do
       it 'will use existing user correlation_id if one exists' do
         expect(service_obj.send(:correlation_id)).to eq(user.mhv_correlation_id)
@@ -33,8 +40,27 @@ describe InheritedProofing::MHV::Service do
       end
     end
 
-    it 'will fail if user is not found'
-    it 'will fail if mhv service is down'
+    context 'when unable to find a user by ICN' do
+      before do
+        allow_any_instance_of(User).to receive(:mhv_correlation_id).and_return(nil)
+        allow_any_instance_of(described_class).to receive(:mhv_api_request).and_return(correlation_id_error_response)
+      end
+
+      it 'will fail if user is not found' do
+        expect(service_obj.send(:correlation_id)).to eq(nil)
+        expect(service_obj.verified?).to eq(false)
+      end
+    end
+
+    context 'with application error' do
+      before do
+        allow_any_instance_of(User).to receive(:mhv_correlation_id).and_return(nil)
+      end
+
+      it 'will fail if mhv service is down' do
+        expect(service_obj.send(:correlation_id)).to eq('whatever')
+      end
+    end
   end
 
   context 'identity proofed data api' do
