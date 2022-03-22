@@ -2,48 +2,50 @@
 
 require 'inherited_proofing/mhv/configuration'
 
-module InheritedProofing::MHV
-  class Service < Common::Client::Base
-    configuration InheritedProofing::MHV::Configuration
+module InheritedProofing
+  module MHV
+    class Service < Common::Client::Base
+      configuration InheritedProofing::MHV::Configuration
 
-    attr_reader :user
+      attr_reader :user
 
-    def intitialize(user)
-      @user = user
-    end
+      def intitialize(user)
+        @user = user
+      end
 
-    def verified?
-      identity_document_exists?
-    end
+      def verified?
+        identity_document_exists?
+      end
 
-    private
+      private
 
-    def correlation_id
-      binding.pry
-      user.mhv_correlation_id.presence || mhv_api_request(correlation_id_url, 'correlationId')
-    end
+      def correlation_id
+        binding.pry
+        user.mhv_correlation_id.presence || mhv_api_request(correlation_id_url, 'correlationId')
+      end
 
-    def identity_document_exists?
-      mhv_api_request(verification_info_url, 'identityDocumentExist')
-    end
+      def identity_document_exists?
+        mhv_api_request(verification_info_url, 'identityDocumentExist')
+      end
 
-    def correlation_id_url
-      "#{config.valid_id_url}/#{user.icn}"
-    end
+      def correlation_id_url
+        "#{config.valid_id_url}/#{user.icn}"
+      end
 
-    def verification_info_url
-      "#{config.vacct_info_url}/#{correlation_id}"
-    end
+      def verification_info_url
+        "#{config.vacct_info_url}/#{correlation_id}"
+      end
 
-    def mhv_api_request(url, attribute)
-      response = perform(:get, url, nil, headers)
-      response[attribute]
-    rescue Common::Client::Errors::ClientError => e
-      raise e
-    end
+      def mhv_api_request(url, attribute)
+        response = perform(:get, url, nil, headers)
+        response[attribute]
+      rescue Common::Client::Errors::ClientError => e
+        raise e
+      end
 
-    def headers
-      { 'appToken' => config.app_token, 'Content-Type' => 'application/json', 'Accept' => 'application/json' }
+      def headers
+        { 'appToken' => config.app_token, 'Content-Type' => 'application/json', 'Accept' => 'application/json' }
+      end
     end
   end
 end
