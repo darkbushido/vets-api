@@ -58,19 +58,65 @@ describe InheritedProofing::MHV::Service do
         allow_any_instance_of(described_class).to receive(:perform).and_raise(Common::Client::Errors::ClientError)
       end
 
-      it 'will fail if mhv service is down' do
+      it 'will return false if mhv service is down' do
         expect(service_obj.send(:correlation_id)).to eq(nil)
         expect(service_obj.verified?).to eq(false)
       end
     end
   end
 
-  context 'identity proofed data api' do
-    context 'when user is found' do
-      it 'will return true if user has identity proofing'
-      it 'will return false if user does not have identity proofing'
+  describe 'identity proofed data api' do
+    context 'when user is found and verified' do
+      let(:identity_data_response) do
+        {
+          'mhvId' => 19031205,
+          'identityProofedMethod' => 'IPA',
+          'identityProofingDate' => '2020-12-14',
+          'identityDocumentExist' => true,
+          'identityDocumentInfo' =>  {
+            'primaryIdentityDocumentNumber' => '73929233',
+            'primaryIdentityDocumentType' => 'StateIssuedId',
+            'primaryIdentityDocumentCountry' => 'United States',
+            'primaryIdentityDocumentExpirationDate' => '2026-03-30'
+          }
+        }
+      end
+
+      before do
+        allow_any_instance_of(described_class).to receive(:mhv_api_request).and_return(identity_data_response)
+      end
+
+      it 'will return true if user has identity proofing' do
+        expect(service_obj.send(:identity_document_exists?)).to eq(true)
+      end
     end
-    it 'will fail if user is not found'
-    it 'will fail if mhv service is down'
+
+    context 'when user is found and not verified' do
+      let(:identity_data_failed_response) do
+        {
+          'mhvId' => 9712240,
+          'identityDocumentExist' => false
+        }
+      end
+
+      before do
+        allow_any_instance_of(described_class).to receive(:mhv_api_request).and_return(identity_data_failed_response)
+      end
+
+      it 'will return false if user does not have identity proofing' do
+        expect(service_obj.send(:identity_document_exists?)).to eq(false)
+      end
+    end
+
+    context 'with application error' do
+      before do
+        allow_any_instance_of(described_class).to receive(:perform).and_raise(Common::Client::Errors::ClientError)
+      end
+
+      it 'will return false if mhv service is down' do
+        expect(service_obj.send(:identity_document_exists?)).to eq(false)
+        expect(service_obj.verified?).to eq(false)
+      end
+    end
   end
 end
