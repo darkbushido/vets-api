@@ -6,7 +6,7 @@ require 'inherited_proofing/mhv/service'
 describe InheritedProofing::MHV::Service do
   let(:user) { FactoryBot.create(:user, :loa3) }
   let(:service_obj) { described_class.new(user) }
-  let(:correlation_id) { 19031408 }
+  let(:correlation_id) { 19031408 } # rubocop:disable Style/NumericLiterals
   let(:correlation_id_response) do
     {
       'correlationId' => correlation_id,
@@ -55,10 +55,12 @@ describe InheritedProofing::MHV::Service do
     context 'with application error' do
       before do
         allow_any_instance_of(User).to receive(:mhv_correlation_id).and_return(nil)
+        allow_any_instance_of(described_class).to receive(:perform).and_raise(Common::Client::Errors::ClientError)
       end
 
       it 'will fail if mhv service is down' do
-        expect(service_obj.send(:correlation_id)).to eq('whatever')
+        expect(service_obj.send(:correlation_id)).to eq(nil)
+        expect(service_obj.verified?).to eq(false)
       end
     end
   end

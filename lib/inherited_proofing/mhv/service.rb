@@ -38,7 +38,6 @@ module InheritedProofing
       end
 
       def mhv_api_request(url)
-        binding.pry
         perform(:get, url, nil, headers)
       rescue Common::Client::Errors::ClientError
         {}

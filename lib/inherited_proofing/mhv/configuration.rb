@@ -26,10 +26,15 @@ module InheritedProofing
       end
 
       def connection
-        Faraday.new(base_path, headers: base_request_headers, request: request_options) do |conn|
+        @connection ||= Faraday.new(
+          base_path,
+          headers: base_request_headers,
+          request: request_options
+        ) do |conn|
           conn.use :breakers
-          conn.request :json
-          conn.response :raise_error, error_prefix: service_name
+          conn.use Faraday::Response::RaiseError
+          conn.response :snakecase
+          conn.response :json, content_type: /\bjson$/
           conn.adapter Faraday.default_adapter
         end
       end
