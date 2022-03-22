@@ -18,7 +18,7 @@ module InheritedProofing
       end
 
       def base_path
-        ''
+        Settings.mhv.inherited_proofing.base_path
       end
 
       def service_name

@@ -427,6 +427,7 @@ mhv:
   account:
     mock: false
   inherited_proofing:
+    base_path: https://essapi-sysb.myhealth.va.gov/mhv-api/patient/v1/multicorr
     valid_id_url: https://essapi-sysb.myhealth.va.gov/mhv-api/patient/v1/multicorr/validmhvid
     vacct_info_url: https://essapi-sysb.myhealth.va.gov/mhv-api/patient/v1/multicorr/mhvacctinfo
 
