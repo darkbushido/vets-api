@@ -18,11 +18,15 @@ module RapidReadyForDecision
 
     private
 
+    def patient_info(form526_submission)
+      form526_submission.full_name.merge(birthdate: form526_submission.auth_headers['va_eauth_birthdate'])
+    end
+
     def query_and_assess_lighthouse(form526_submission)
       client = lighthouse_client(form526_submission)
       bp_readings = assess_bp_readings(client.list_resource('observations'))
       # stop querying if bp_readings.blank?
-      medications = assess_medications(client.list_resource('medications')) if bp_readings.present?
+      medications = assess_medications(client.list_resource('medication_requests')) if bp_readings.present?
 
       {
         bp_readings: bp_readings,
@@ -42,8 +46,12 @@ module RapidReadyForDecision
       RapidReadyForDecision::HypertensionMedicationRequestData.new(medications).transform
     end
 
+    def med_stats_hash(_form526_submission, assessed_data)
+      { bp_readings_count: assessed_data[:bp_readings]&.size }
+    end
+
     def generate_pdf(form526_submission, assessed_data)
-      RapidReadyForDecision::HypertensionPdfGenerator.new(form526_submission.full_name,
+      RapidReadyForDecision::HypertensionPdfGenerator.new(patient_info(form526_submission),
                                                           assessed_data[:bp_readings],
                                                           assessed_data[:medications]).generate
     end

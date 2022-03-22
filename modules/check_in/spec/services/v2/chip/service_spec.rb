@@ -116,6 +116,9 @@ describe V2::Chip::Service do
         allow_any_instance_of(::V2::Chip::Service).to receive(:token).and_return('jwt-token-123-abc')
         allow_any_instance_of(::V2::Chip::Client).to receive(:pre_check_in)
           .and_return(faraday_response)
+        allow(Flipper).to receive(:enabled?)
+          .with(:check_in_experience_no_demographics_confirmation_for_unverified_enabled)
+          .and_return(true)
       end
 
       it 'returns correct response' do
@@ -209,58 +212,6 @@ describe V2::Chip::Service do
     end
   end
 
-  describe '#demographic_confirmations' do
-    Timecop.freeze(Time.zone.now) do
-      let(:result) do
-        {
-          demographicConfirmations: {
-            demographicsNeedsUpdate: true,
-            demographicsConfirmedAt: Time.zone.now.iso8601,
-            nextOfKinNeedsUpdate: true,
-            nextOfConfirmedAt: Time.zone.now.iso8601,
-            emergencyContactNeedsUpdate: true,
-            emergencyContactConfirmedAt: Time.zone.now.iso8601
-          }
-        }
-      end
-
-      context 'with check_in_experience_chip_service_nok_confirmation_update_enabled turned off' do
-        before do
-          allow(Flipper).to receive(:enabled?)
-            .with(:check_in_experience_chip_service_nok_confirmation_update_enabled).and_return(false)
-        end
-
-        it 'returns a hash which includes the key nextOfConfirmedAt' do
-          expect(subject.build(check_in: valid_check_in, params: {}).demographic_confirmations).to eq(result)
-        end
-      end
-
-      context 'with check_in_experience_chip_service_nok_confirmation_update_enabled turned on' do
-        let(:result) do
-          {
-            demographicConfirmations: {
-              demographicsNeedsUpdate: true,
-              demographicsConfirmedAt: Time.zone.now.iso8601,
-              nextOfKinNeedsUpdate: true,
-              nextOfKinConfirmedAt: Time.zone.now.iso8601,
-              emergencyContactNeedsUpdate: true,
-              emergencyContactConfirmedAt: Time.zone.now.iso8601
-            }
-          }
-        end
-
-        before do
-          allow(Flipper).to receive(:enabled?)
-            .with(:check_in_experience_chip_service_nok_confirmation_update_enabled).and_return(true)
-        end
-
-        it 'returns a hash which includes the key nextOfKinConfirmedAt' do
-          expect(subject.build(check_in: valid_check_in, params: {}).demographic_confirmations).to eq(result)
-        end
-      end
-    end
-  end
-
   describe '#confirm_demographics' do
     let(:params) do
       {
@@ -268,7 +219,7 @@ describe V2::Chip::Service do
           demographicsNeedsUpdate: false,
           demographicsConfirmedAt: '2021-11-30T20:45:03.779Z',
           nextOfKinNeedsUpdate: false,
-          nextOfConfirmedAt: '2021-11-30T20:45:03.779Z',
+          nextOfKinConfirmedAt: '2021-11-30T20:45:03.779Z',
           emergencyContactNeedsUpdate: true,
           emergencyContactConfirmedAt: '2021-11-30T20:45:03.779Z'
         },
@@ -386,6 +337,187 @@ describe V2::Chip::Service do
       it 'returns unauthorized message' do
         expect(subject.build(check_in: valid_check_in, params: params)
                       .refresh_precheckin).to eq(error_response)
+      end
+    end
+  end
+
+  describe 'demographic_confirmations' do
+    Timecop.freeze(Time.zone.now) do
+      context 'with check_in_experience_no_demographics_confirmation_for_unverified_enabled turned on' do
+        before do
+          allow(Flipper).to receive(:enabled?)
+            .with(:check_in_experience_no_demographics_confirmation_for_unverified_enabled)
+            .and_return(true)
+        end
+
+        context 'when all demographics data available in check_in_body' do
+          let(:params) do
+            {
+              demographics_up_to_date: true,
+              next_of_kin_up_to_date: true,
+              emergency_contact_up_to_date: false
+            }
+          end
+
+          let(:demographics_confirmation_hash) do
+            {
+              demographicConfirmations: {
+                demographicsNeedsUpdate: false,
+                demographicsConfirmedAt: Time.zone.now.iso8601,
+                nextOfKinNeedsUpdate: false,
+                nextOfKinConfirmedAt: Time.zone.now.iso8601,
+                emergencyContactNeedsUpdate: true,
+                emergencyContactConfirmedAt: Time.zone.now.iso8601
+              }
+            }
+          end
+
+          it 'returns demographics confirmation hash with all demographics data' do
+            expect(subject.build(check_in: valid_check_in, params: params)
+                          .demographic_confirmations).to eq(demographics_confirmation_hash)
+          end
+        end
+
+        context 'when only demographics_up_to_date in check_in_body' do
+          let(:params) do
+            {
+              demographics_up_to_date: true
+            }
+          end
+
+          let(:demographics_confirmation_hash) do
+            {
+              demographicConfirmations: {
+                demographicsNeedsUpdate: false,
+                demographicsConfirmedAt: Time.zone.now.iso8601
+              }
+            }
+          end
+
+          it 'returns demographics confirmation with only demographics_up_to_date data' do
+            expect(subject.build(check_in: valid_check_in, params: params)
+                          .demographic_confirmations).to eq(demographics_confirmation_hash)
+          end
+        end
+
+        context 'when only next_of_kin_up_to_date in check_in_body' do
+          let(:params) do
+            {
+              next_of_kin_up_to_date: false
+            }
+          end
+
+          let(:demographics_confirmation_hash) do
+            {
+              demographicConfirmations: {
+                nextOfKinNeedsUpdate: true,
+                nextOfKinConfirmedAt: Time.zone.now.iso8601
+              }
+            }
+          end
+
+          it 'returns demographics confirmation with only next_of_kin_up_to_date data' do
+            expect(subject.build(check_in: valid_check_in, params: params)
+                          .demographic_confirmations).to eq(demographics_confirmation_hash)
+          end
+        end
+
+        context 'when only emergency_contact_up_to_date in check_in_body' do
+          let(:params) do
+            {
+              emergency_contact_up_to_date: true
+            }
+          end
+
+          let(:demographics_confirmation_hash) do
+            {
+              demographicConfirmations: {
+                emergencyContactNeedsUpdate: false,
+                emergencyContactConfirmedAt: Time.zone.now.iso8601
+              }
+            }
+          end
+
+          it 'returns demographics confirmation with only emergency_contact_up_to_date data' do
+            expect(subject.build(check_in: valid_check_in, params: params)
+                          .demographic_confirmations).to eq(demographics_confirmation_hash)
+          end
+        end
+
+        context 'when no demographics data available in check_in_body' do
+          let(:demographics_confirmation_hash) do
+            {
+              demographicConfirmations: {}
+            }
+          end
+
+          it 'returns demographics confirmation hash with no demographics data' do
+            expect(subject.build(check_in: valid_check_in, params: {})
+                          .demographic_confirmations).to eq(demographics_confirmation_hash)
+          end
+        end
+      end
+
+      context 'with check_in_experience_no_demographics_confirmation_for_unverified_enabled turned off' do
+        before do
+          allow(Flipper).to receive(:enabled?)
+            .with(:check_in_experience_no_demographics_confirmation_for_unverified_enabled)
+            .and_return(false)
+        end
+
+        context 'when all demographics data available in check_in_body' do
+          let(:params) do
+            {
+              demographics_up_to_date: true,
+              next_of_kin_up_to_date: true,
+              emergency_contact_up_to_date: false
+            }
+          end
+
+          let(:demographics_confirmation_hash) do
+            {
+              demographicConfirmations: {
+                demographicsNeedsUpdate: false,
+                demographicsConfirmedAt: Time.zone.now.iso8601,
+                nextOfKinNeedsUpdate: false,
+                nextOfKinConfirmedAt: Time.zone.now.iso8601,
+                emergencyContactNeedsUpdate: true,
+                emergencyContactConfirmedAt: Time.zone.now.iso8601
+              }
+            }
+          end
+
+          it 'returns demographics confirmation hash with all demographics data' do
+            expect(subject.build(check_in: valid_check_in, params: params)
+                          .demographic_confirmations).to eq(demographics_confirmation_hash)
+          end
+        end
+
+        context 'when only demographics_up_to_date in check_in_body' do
+          let(:params) do
+            {
+              demographics_up_to_date: true
+            }
+          end
+
+          let(:demographics_confirmation_hash) do
+            {
+              demographicConfirmations: {
+                demographicsNeedsUpdate: false,
+                demographicsConfirmedAt: Time.zone.now.iso8601,
+                nextOfKinNeedsUpdate: true,
+                nextOfKinConfirmedAt: Time.zone.now.iso8601,
+                emergencyContactNeedsUpdate: true,
+                emergencyContactConfirmedAt: Time.zone.now.iso8601
+              }
+            }
+          end
+
+          it 'returns demographics confirmation hash with all demographics data' do
+            expect(subject.build(check_in: valid_check_in, params: params)
+                          .demographic_confirmations).to eq(demographics_confirmation_hash)
+          end
+        end
       end
     end
   end

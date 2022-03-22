@@ -89,17 +89,17 @@ RSpec.describe V1::SessionsController, type: :controller do
             let(:authn) do
               case type
               when 'mhv'
-                ['myhealthevet', AuthnContext::ID_ME]
+                ['myhealthevet', AuthnContext::MHV]
               when 'mhv_verified'
-                ['myhealthevet_loa3', AuthnContext::ID_ME]
+                ['myhealthevet_loa3', AuthnContext::MHV]
               when 'idme'
                 [LOA::IDME_LOA1_VETS, AuthnContext::ID_ME]
               when 'idme_verified'
                 [LOA::IDME_LOA3, AuthnContext::ID_ME]
               when 'dslogon'
-                ['dslogon', AuthnContext::ID_ME]
+                ['dslogon', AuthnContext::DSLOGON]
               when 'dslogon_verified'
-                ['dslogon_loa3', AuthnContext::ID_ME]
+                ['dslogon_loa3', AuthnContext::DSLOGON]
               when 'logingov'
                 [IAL::LOGIN_GOV_IAL1,
                  AAL::LOGIN_GOV_AAL2,
@@ -114,7 +114,6 @@ RSpec.describe V1::SessionsController, type: :controller do
             it 'presents login form' do
               expect(SAML::SSOeSettingsService)
                 .to receive(:saml_settings)
-                .with(force_authn: false)
 
               expect { get(:new, params: { type: type, clientId: '123123' }) }
                 .to trigger_statsd_increment(described_class::STATSD_SSO_NEW_KEY,
@@ -141,7 +140,6 @@ RSpec.describe V1::SessionsController, type: :controller do
             it 'redirects for an inbound ssoe' do
               expect(SAML::SSOeSettingsService)
                 .to receive(:saml_settings)
-                .with(force_authn: false)
 
               expect do
                 get(:new, params: {
@@ -204,7 +202,6 @@ RSpec.describe V1::SessionsController, type: :controller do
             it 'redirects for an inbound ssoe' do
               expect(SAML::SSOeSettingsService)
                 .to receive(:saml_settings)
-                .with(force_authn: false)
 
               expect { get(:new, params: { type: 'custom', authn: 'myhealthevet', clientId: '123123' }) }
                 .to trigger_statsd_increment(described_class::STATSD_SSO_NEW_KEY,

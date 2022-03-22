@@ -7,7 +7,6 @@ module AppealsApi::V2
         include AppealsApi::StatusSimulation
         include SentryLogging
         include AppealsApi::CharacterUtilities
-        include AppealsApi::CharacterValidation
 
         class EvidenceSubmissionRequestValidatorError < StandardError; end
 
@@ -15,10 +14,9 @@ module AppealsApi::V2
           File.read(
             AppealsApi::Engine.root.join('config/schemas/v2/10182_headers.json')
           )
-        )['definitions']['nodCreateHeaders']['properties'].keys
+        )['definitions']['nodCreateParameters']['properties'].keys
 
         skip_before_action :authenticate
-        before_action :validate_characters, only: :create
         before_action :nod_uuid_present?, only: :create
 
         def create

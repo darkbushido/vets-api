@@ -7,10 +7,8 @@ class AppealsApi::V2::DecisionReviews::NoticeOfDisagreementsController < Appeals
   include AppealsApi::JsonFormatValidation
   include AppealsApi::StatusSimulation
   include AppealsApi::CharacterUtilities
-  include AppealsApi::CharacterValidation
 
   skip_before_action :authenticate
-  before_action :validate_characters, only: %i[create validate]
   before_action :validate_json_format, if: -> { request.post? }
   before_action :validate_json_schema, only: %i[create validate]
   before_action :new_notice_of_disagreement, only: %i[create validate]
@@ -23,7 +21,7 @@ class AppealsApi::V2::DecisionReviews::NoticeOfDisagreementsController < Appeals
     File.read(
       AppealsApi::Engine.root.join('config/schemas/v2/10182_headers.json')
     )
-  )['definitions']['nodCreateHeaders']['properties'].keys
+  )['definitions']['nodCreateParameters']['properties'].keys
   SCHEMA_ERROR_TYPE = Common::Exceptions::DetailedSchemaErrors
 
   def create
