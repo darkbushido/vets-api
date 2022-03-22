@@ -4,6 +4,7 @@ require 'rails_helper'
 require 'claims_api/special_issue_mappers/bgs'
 require 'token_validation/v2/client'
 require 'claims_api/error/error_handler'
+# require 'spec_helper'
 
 # describe ApplicationController, type: :controller do
 #   let(:scopes) { %w[claim.write] }
@@ -42,12 +43,29 @@ describe ApplicationController, type: :request do
   
   it 'catches an invalid token' do
     with_okta_user(scopes) do |auth_header|
-      VCR.turned_off {
-        get get_poa_path, headers: {'Authorization'=>'Bearer bad_token'}
-      }
-      puts response.body
+      allow(JWT).to receive(:decode).and_raise(JWT::DecodeError)
+
+      get get_poa_path, headers: {'Authorization'=>'Bearer bad_token'}
+
       parsed_body = JSON.parse(response.body)
-      expect(parsed_body['detail']).to eq('Invalid token.')
+      expect(parsed_body['errors'][0]['detail']).to eq('Invalid token.')
+    end
+  end
+
+  it 'catches an expired token' do
+    with_okta_user(scopes) do |auth_header|
+      i = 0
+      allow(JWT).to receive(:decode) do
+        raise(JWT::ExpiredSignature) if i > 2
+
+        i +=1
+        okta_jwt(scopes)
+      end
+      
+      get get_poa_path, headers: auth_header
+
+      parsed_body = JSON.parse(response.body)
+      expect(parsed_body['errors'][0]['detail']).to eq('Invalid token.')
     end
   end
 end
