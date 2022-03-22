@@ -9,7 +9,7 @@ module InheritedProofing
 
       attr_reader :user
 
-      def intitialize(user)
+      def initialize(user)
         @user = user
       end
 
