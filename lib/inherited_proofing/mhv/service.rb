@@ -20,12 +20,11 @@ module InheritedProofing
       private
 
       def correlation_id
-        binding.pry
-        user.mhv_correlation_id.presence || mhv_api_request(correlation_id_url, 'correlationId')
+        user.mhv_correlation_id.presence || mhv_api_request(correlation_id_url)['correlationId']
       end
 
       def identity_document_exists?
-        mhv_api_request(verification_info_url, 'identityDocumentExist')
+        mhv_api_request(verification_info_url)['identityDocumentExist']
       end
 
       def correlation_id_url
@@ -36,9 +35,8 @@ module InheritedProofing
         "#{config.vacct_info_url}/#{correlation_id}"
       end
 
-      def mhv_api_request(url, attribute)
+      def mhv_api_request(url)
         response = perform(:get, url, nil, headers)
-        response[attribute]
       rescue Common::Client::Errors::ClientError => e
         raise e
       end
