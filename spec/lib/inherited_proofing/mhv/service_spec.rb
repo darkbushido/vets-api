@@ -48,7 +48,7 @@ describe InheritedProofing::MHV::Service do
 
       it 'will fail if user is not found' do
         expect(service_obj.send(:correlation_id)).to eq(nil)
-        expect(service_obj.eligible?).to eq(false)
+        expect(service_obj.identity_proof_data).to eq({})
       end
     end
 
@@ -60,7 +60,7 @@ describe InheritedProofing::MHV::Service do
 
       it 'will return false if mhv service is down' do
         expect(service_obj.send(:correlation_id)).to eq(nil)
-        expect(service_obj.eligible?).to eq(false)
+        expect(service_obj.identity_proof_data).to eq({})
       end
     end
   end
@@ -86,8 +86,8 @@ describe InheritedProofing::MHV::Service do
         allow_any_instance_of(described_class).to receive(:mhv_api_request).and_return(identity_data_response)
       end
 
-      it 'will return true if user has identity proofing' do
-        expect(service_obj.send(:identity_document_exists?)).to eq(true)
+      it 'will return hash if user has identity proof' do
+        expect(service_obj.identity_proof_data).to eq(identity_data_response)
       end
     end
 
@@ -103,8 +103,8 @@ describe InheritedProofing::MHV::Service do
         allow_any_instance_of(described_class).to receive(:mhv_api_request).and_return(identity_data_failed_response)
       end
 
-      it 'will return false if user does not have identity proofing' do
-        expect(service_obj.send(:identity_document_exists?)).to eq(false)
+      it 'will return empty hash if user does not have identity proof' do
+        expect(service_obj.identity_proof_data).to eq(identity_data_failed_response)
       end
     end
 
@@ -113,9 +113,8 @@ describe InheritedProofing::MHV::Service do
         allow_any_instance_of(described_class).to receive(:perform).and_raise(Common::Client::Errors::ClientError)
       end
 
-      it 'will return false if mhv service is down' do
-        expect(service_obj.send(:identity_document_exists?)).to eq(false)
-        expect(service_obj.eligible?).to eq(false)
+      it 'will return empty hash if mhv service is down' do
+        expect(service_obj.identity_proof_data).to eq({})
       end
     end
   end

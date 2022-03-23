@@ -14,7 +14,7 @@ module InheritedProofing
       end
 
       def identity_proof_data
-        return false if correlation_id.blank?
+        return {} if correlation_id.blank?
 
         mhv_api_request(verification_info_url)
       end
