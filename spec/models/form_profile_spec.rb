@@ -812,7 +812,7 @@ RSpec.describe FormProfile, type: :model do
     }
   end
 
-  let(:v21_22_a_expected) do
+  let(:v21_22a_expected) do
     {
       'address' => address,
       'email' => user.pciu_email,

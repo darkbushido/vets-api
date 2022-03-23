@@ -104,7 +104,7 @@ class FormProfile
     fsr: ['5655'],
     vre_counseling: ['28-8832'],
     vre_readiness: ['28-1900'],
-    appoint_rep: ['21-22A']
+    appoint_rep: ['21-22A'],
     coe: ['26-1880']
   }.freeze
 
@@ -135,7 +135,7 @@ class FormProfile
     '28-8832' => ::FormProfiles::VA288832,
     '28-1900' => ::FormProfiles::VA281900,
     '22-1990EZ' => ::FormProfiles::VA1990ez,
-    '21-22A' => ::FormProfiles::VA2122a
+    '21-22A' => ::FormProfiles::VA2122a,
     '26-1880' => ::FormProfiles::VA261880
   }.freeze
 
