@@ -1,7 +1,7 @@
 require "test_helper"
 
 module DhpConnectedDevices
-  class HellosControllerTest < ActionDispatch::IntegrationTest
+  class FitbitControllerTest < ActionDispatch::IntegrationTest
     include Engine.routes.url_helpers
 
     # test "the truth" do
