@@ -573,28 +573,6 @@ claims_api:
   token_validation:
     api_key:
 
-#Settings for DHP Connected Devices
-dhp_connected_devices:
-  report_enabled: false
-  audit_enabled: false
-  s3:
-    enabled: false
-    aws_access_key_id: ~
-    aws_secret_access_key: ~
-    region: ~
-    bucket: ~
-  disability_claims_mock_override: false
-  schema_dir: config/schemas
-  slack:
-    webhook_url: https://example.com
-  claims_pending_reporting:
-    threshold: ~
-    environment_name: ~
-  v2_docs:
-    enabled: false
-  token_validation:
-    api_key:
-
 redis:
   host: localhost
   port: 6379
