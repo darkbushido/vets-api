@@ -48,7 +48,7 @@ describe InheritedProofing::MHV::Service do
 
       it 'will fail if user is not found' do
         expect(service_obj.send(:correlation_id)).to eq(nil)
-        expect(service_obj.verified?).to eq(false)
+        expect(service_obj.eligible?).to eq(false)
       end
     end
 
@@ -60,13 +60,13 @@ describe InheritedProofing::MHV::Service do
 
       it 'will return false if mhv service is down' do
         expect(service_obj.send(:correlation_id)).to eq(nil)
-        expect(service_obj.verified?).to eq(false)
+        expect(service_obj.eligible?).to eq(false)
       end
     end
   end
 
   describe 'identity proofed data api' do
-    context 'when user is found and verified' do
+    context 'when user is found and eligible' do
       let(:identity_data_response) do
         {
           'mhvId' => 19031205, # rubocop:disable Style/NumericLiterals
@@ -91,7 +91,7 @@ describe InheritedProofing::MHV::Service do
       end
     end
 
-    context 'when user is found and not verified' do
+    context 'when user is found and not eligible' do
       let(:identity_data_failed_response) do
         {
           'mhvId' => 9712240, # rubocop:disable Style/NumericLiterals
@@ -115,7 +115,7 @@ describe InheritedProofing::MHV::Service do
 
       it 'will return false if mhv service is down' do
         expect(service_obj.send(:identity_document_exists?)).to eq(false)
-        expect(service_obj.verified?).to eq(false)
+        expect(service_obj.eligible?).to eq(false)
       end
     end
   end

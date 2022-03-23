@@ -13,7 +13,7 @@ module InheritedProofing
         @user = user
       end
 
-      def verified?
+      def eligible?
         identity_document_exists?
       end
 
