@@ -13,20 +13,16 @@ module InheritedProofing
         @user = user
       end
 
-      def eligible?
-        identity_document_exists?
+      def identity_proof_data
+        return false if correlation_id.blank?
+
+        mhv_api_request(verification_info_url)
       end
 
       private
 
       def correlation_id
         @correlation_id ||= user.mhv_correlation_id.presence || mhv_api_request(correlation_id_url)['correlationId']
-      end
-
-      def identity_document_exists?
-        return false if correlation_id.blank?
-
-        !!mhv_api_request(verification_info_url)['identityDocumentExist']
       end
 
       def correlation_id_url
