@@ -26,6 +26,7 @@ module ClaimsApi
           poa_code = form_attributes.dig('serviceOrganization', 'poaCode')
           validate_poa_code!(poa_code)
           validate_poa_code_for_current_user!(poa_code) if header_request? && !token.client_credentials_token?
+          check_file_number_exists!
 
           power_of_attorney = ClaimsApi::PowerOfAttorney.find_using_identifier_and_source(header_md5: header_md5,
                                                                                           source_name: source_name)
@@ -47,14 +48,13 @@ module ClaimsApi
             power_of_attorney.save!
           end
 
-          # This job only occurs when a Veteran submits a POA request, they are not required to submit a document.
-          ClaimsApi::PoaUpdater.perform_async(power_of_attorney.id) unless header_request?
-          if enable_vbms_access?
-            ClaimsApi::VBMSUpdater.perform_async(power_of_attorney.id,
-                                                 target_veteran.participant_id)
-          end
           data = power_of_attorney.form_data
-          ClaimsApi::PoaFormBuilderJob.perform_async(power_of_attorney.id) if data['signatures'].present?
+
+          if data.dig('signatures', 'veteran').present? && data.dig('signatures', 'representative').present?
+            # Autogenerate a 21-22 form from the request body and upload it to VBMS.
+            # If upload is successful, then the PoaUpater job is also called to update the code in BGS.
+            ClaimsApi::PoaFormBuilderJob.perform_async(power_of_attorney.id)
+          end
 
           render json: power_of_attorney, serializer: ClaimsApi::PowerOfAttorneySerializer
         end
@@ -69,16 +69,14 @@ module ClaimsApi
           find_poa_by_id
           check_file_number_exists!
 
-          # This job only occurs when a Representative submits a POA request to ensure they've also uploaded a document.
-          ClaimsApi::PoaUpdater.perform_async(@power_of_attorney.id) if header_request?
-
           @power_of_attorney.set_file_data!(documents.first, params[:doc_type])
           @power_of_attorney.status = ClaimsApi::PowerOfAttorney::SUBMITTED
           @power_of_attorney.save!
           @power_of_attorney.reload
 
-          # This job will trigger whether submission is from a Veteran or Representative when a document is sent.
+          # If upload is successful, then the PoaUpater job is also called to update the code in BGS.
           ClaimsApi::VBMSUploadJob.perform_async(@power_of_attorney.id)
+
           render json: @power_of_attorney, serializer: ClaimsApi::PowerOfAttorneySerializer
         end
 
@@ -137,10 +135,6 @@ module ClaimsApi
         end
 
         private
-
-        def enable_vbms_access?
-          form_attributes['recordConsent'] && form_attributes['consentLimits'].blank?
-        end
 
         def current_poa_begin_date
           return nil if current_poa.try(:begin_date).blank?
@@ -231,7 +225,8 @@ module ClaimsApi
           begin
             response = bgs_service.people.find_by_ssn(ssn) # rubocop:disable Rails/DynamicFindBy
             unless response && response[:file_nbr].present?
-              error_message = 'Unable to locate Veteran file number.'
+              error_message = 'Unable to locate Veteran file number for eFolder. '\
+                              'Please contact the Digital Transformation Center (DTC) at 202-921-0911 for assistance.'
               raise ::Common::Exceptions::UnprocessableEntity.new(detail: error_message)
             end
           rescue BGS::ShareError => e

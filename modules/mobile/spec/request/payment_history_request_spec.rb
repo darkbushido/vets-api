@@ -241,6 +241,33 @@ RSpec.describe 'payment_history', type: :request do
       end
     end
 
+    context 'when payments return as nil' do
+      before do
+        allow_any_instance_of(BGS::PaymentService)
+          .to receive(:payment_history).and_return(nil)
+        get '/mobile/v0/payment-history', headers: iam_headers
+      end
+
+      it 'returns a 502' do
+        expect(response).to have_http_status(:bad_gateway)
+      end
+
+      it 'lists the invalid params' do
+        expect(response.parsed_body).to eq(
+          {
+            'errors' =>
+              [
+                {
+                  'title' => 'Bad Gateway',
+                  'detail' => 'Received an an invalid response from the upstream server',
+                  'code' => 'MOBL_502_upstream_error', 'status' => '502'
+                }
+              ]
+          }
+        )
+      end
+    end
+
     context 'with an invalid date in payment history' do
       before do
         allow(Rails.logger).to receive(:warn)
@@ -252,12 +279,6 @@ RSpec.describe 'payment_history', type: :request do
 
       it 'returns a 200' do
         expect(response).to have_http_status(:ok)
-      end
-
-      it 'logs that a payment with no date was found' do
-        expect(Rails.logger).to have_received(:warn).at_least(:once).with(
-          'mobile payment history record found with no date', { payment_id: '11213114', user_icn: '1008596379V859838' }
-        )
       end
     end
   end

@@ -5,6 +5,7 @@ require AppealsApi::Engine.root.join('spec', 'spec_helper.rb')
 
 describe AppealsApi::PdfConstruction::Generator do
   include FixtureHelpers
+  include SchemaHelpers
 
   let(:appeal) { create(:notice_of_disagreement) }
 
@@ -34,6 +35,61 @@ describe AppealsApi::PdfConstruction::Generator do
           expected_pdf = fixture_filepath('expected_10182_extra.pdf', version: 'v1')
           expect(generated_pdf).to match_pdf expected_pdf
           File.delete(generated_pdf) if File.exist?(generated_pdf)
+        end
+      end
+
+      context 'v2' do
+        context 'pdf content verification' do
+          let(:nod_v2) { create(:notice_of_disagreement_v2, created_at: '2021-02-03T14:15:16Z') }
+
+          it 'generates the expected pdf' do
+            generated_pdf = described_class.new(nod_v2, version: 'V2').generate
+            expected_pdf = fixture_filepath('expected_10182.pdf', version: 'v2')
+            expect(generated_pdf).to match_pdf expected_pdf
+            File.delete(generated_pdf) if File.exist?(generated_pdf)
+          end
+        end
+
+        context 'pdf extra content verification' do
+          let(:extra_nod_v2) { create(:extra_notice_of_disagreement_v2, created_at: '2021-02-03T14:15:16Z') }
+
+          it 'generates the expected pdf' do
+            data = extra_nod_v2.form_data
+            extra_nod_v2.form_data = data
+
+            generated_pdf = described_class.new(extra_nod_v2, version: 'V2').generate
+            expected_pdf = fixture_filepath('expected_10182_extra.pdf', version: 'v2')
+            expect(generated_pdf).to match_pdf expected_pdf
+            File.delete(generated_pdf) if File.exist?(generated_pdf)
+          end
+        end
+
+        context 'pdf minimal content verification' do
+          let(:minimal_nod_v2) { create(:minimal_notice_of_disagreement_v2, created_at: '2021-02-03T14:15:16Z') }
+
+          it 'generates the expected pdf' do
+            generated_pdf = described_class.new(minimal_nod_v2, version: 'V2').generate
+            expected_pdf = fixture_filepath('expected_10182_minimal.pdf', version: 'v2')
+            expect(generated_pdf).to match_pdf expected_pdf
+            File.delete(generated_pdf) if File.exist?(generated_pdf)
+          end
+        end
+
+        context 'pdf max length content verification' do
+          let(:schema) { read_schema('10182.json', 'v2') }
+          let(:nod) { build(:notice_of_disagreement_v2, created_at: '2021-02-03T14:15:16Z') }
+          let(:data) { override_max_lengths(nod, schema) }
+
+          it 'generates the expected pdf' do
+            nod.form_data = data
+            nod.save!
+
+            generated_pdf = described_class.new(nod, version: 'v2').generate
+            expected_pdf = fixture_filepath('expected_10182_maxlength.pdf', version: 'v2')
+
+            expect(generated_pdf).to match_pdf(expected_pdf)
+            File.delete(generated_pdf) if File.exist?(generated_pdf)
+          end
         end
       end
     end
@@ -106,6 +162,45 @@ describe AppealsApi::PdfConstruction::Generator do
             File.delete(generated_pdf) if File.exist?(generated_pdf)
           end
         end
+
+        context 'special character verification' do
+          it 'allows certain typography characters into Windows-1252' do
+            hlr = build(:minimal_higher_level_review)
+            hlr.form_data['included'][0]['attributes']['issue'] = 'Smartquotes: “”‘’'
+            hlr.save!
+            generated_pdf = described_class.new(hlr, version: 'V2').generate
+            generated_reader = PDF::Reader.new(generated_pdf)
+            expect(generated_reader.pages[1].text).to include 'Smartquotes: “”‘’'
+            File.delete(generated_pdf) if File.exist?(generated_pdf)
+          end
+
+          it 'removes characters that fall outsize Windows-1252 charset that cannot be downgraded' do
+            hlr = build(:minimal_higher_level_review)
+            hlr.form_data['included'][0]['attributes']['issue'] = '∑mer allergies'
+            hlr.save!
+            generated_pdf = described_class.new(hlr, version: 'V2').generate
+            generated_reader = PDF::Reader.new(generated_pdf)
+            expect(generated_reader.pages[1].text).to include 'mer allergies'
+            File.delete(generated_pdf) if File.exist?(generated_pdf)
+          end
+        end
+
+        context 'pdf max length content verification' do
+          let(:schema) { read_schema('200996.json', 'v2') }
+          let(:hlr) { build(:extra_higher_level_review_v2, created_at: '2021-02-03T14:15:16Z') }
+          let(:data) { override_max_lengths(hlr, schema) }
+
+          it 'generates the expected pdf' do
+            hlr.form_data = data
+            hlr.save!
+
+            generated_pdf = described_class.new(hlr, version: 'v2').generate
+            expected_pdf = fixture_filepath('expected_200996_maxlength.pdf', version: 'v2')
+
+            expect(generated_pdf).to match_pdf(expected_pdf)
+            File.delete(generated_pdf) if File.exist?(generated_pdf)
+          end
+        end
       end
     end
 
@@ -127,6 +222,23 @@ describe AppealsApi::PdfConstruction::Generator do
         it 'generates the expected pdf' do
           generated_pdf = described_class.new(extra_supplemental_claim, version: 'V2').generate
           expected_pdf = fixture_filepath('expected_200995_extra.pdf', version: 'v2')
+          expect(generated_pdf).to match_pdf(expected_pdf)
+          File.delete(generated_pdf) if File.exist?(generated_pdf)
+        end
+      end
+
+      context 'pdf max length content verification' do
+        let(:schema) { read_schema('200995.json', 'v2') }
+        let(:sc) { build(:extra_supplemental_claim, created_at: '2021-02-03T14:15:16Z') }
+        let(:data) { override_max_lengths(sc, schema) }
+
+        it 'generates the expected pdf' do
+          sc.form_data = data
+          sc.save!
+
+          generated_pdf = described_class.new(sc, version: 'v2').generate
+          expected_pdf = fixture_filepath('expected_200995_maxlength.pdf', version: 'v2')
+
           expect(generated_pdf).to match_pdf(expected_pdf)
           File.delete(generated_pdf) if File.exist?(generated_pdf)
         end

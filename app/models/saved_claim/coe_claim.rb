@@ -31,15 +31,22 @@ class SavedClaim::CoeClaim < SavedClaim
     form_copy = {
       'status' => 'SUBMITTED',
       'veteran' => {
-        'firstName' => parsed_form['fullName']['firstName'],
-        'middleName' => parsed_form['fullName']['middleName'],
-        'lastName' => parsed_form['fullName']['lastName'],
-        'suffixName' => parsed_form['fullName']['suffixName'],
+        'firstName' => parsed_form['fullName']['first'],
+        'middleName' => parsed_form['fullName']['middle'] || '',
+        'lastName' => parsed_form['fullName']['last'],
+        'suffixName' => parsed_form['fullName']['suffix'] || '',
+        'vetAddress1' => parsed_form['applicantAddress']['street'],
+        'vetAddress2' => parsed_form['applicantAddress']['street2'] || '',
+        'vetCity' => parsed_form['applicantAddress']['city'],
+        'vetState' => parsed_form['applicantAddress']['state'],
+        'vetZip' => parsed_form['applicantAddress']['postalCode'],
+        'vetZipSuffix' => '',
         'mailingAddress1' => parsed_form['applicantAddress']['street'],
-        'mailingAddress2' => parsed_form['applicantAddress']['street2'],
+        'mailingAddress2' => parsed_form['applicantAddress']['street2'] || '',
         'mailingCity' => parsed_form['applicantAddress']['city'],
         'mailingState' => parsed_form['applicantAddress']['state'],
         'mailingZip' => parsed_form['applicantAddress']['postalCode'],
+        'mailingZipSuffix' => '',
         'contactPhone' => parsed_form['contactPhone'],
         'contactEmail' => parsed_form['contactEmail'],
         'vaLoanIndicator' => parsed_form['vaLoanIndicator'],
@@ -77,17 +84,18 @@ class SavedClaim::CoeClaim < SavedClaim
         'oneTimeRestorationRequested' => parsed_form['intent'] == 'ONETIMERESTORATION',
         'irrrlRequested' => parsed_form['intent'] == 'IRRRL',
         'cashoutRefinaceRequested' => parsed_form['intent'] == 'REFI',
-        # parsed_form['intent'] == 'INQUIRY'??,
-        'homeSellIndicator' => false,
-        'noRestorationEntitlementIndicator' => false,
+        'noRestorationEntitlementIndicator' => parsed_form['intent'] == 'INQUIRY' ||
+                                               parsed_form['intent'] == 'ONETIMERESTORATION',
+        # propertyOwned also maps to the the stillOwn indicator on the LGY side
+        'homeSellIndicator' => !loan_info['propertyOwned'] || false,
         'propertyAddress1' => loan_info['propertyAddress']['propertyAddress1'],
-        'propertyAddress2' => loan_info['propertyAddress']['propertyAddress2'],
+        'propertyAddress2' => loan_info['propertyAddress']['propertyAddress2'] || '',
         'propertyCity' => loan_info['propertyAddress']['propertyCity'],
         'propertyState' => loan_info['propertyAddress']['propertyState'],
         'propertyCounty' => loan_info['propertyAddress']['propertyCounty'],
         'propertyZip' => loan_info['propertyAddress']['propertyZip'],
-        'propertyZipSuffix' => loan_info['propertyAddress']['propertyZipSuffix']
-        # 'willRefinance' => loan_info['propertyAddress']['willRefinance']
+        'propertyZipSuffix' => loan_info['propertyAddress']['propertyZipSuffix'] || ''
+        # 'willRefinance' => loan_info['propertyAddress']['willRefinance'] || false
       }
     end
   end
@@ -95,10 +103,28 @@ class SavedClaim::CoeClaim < SavedClaim
 
   def periods_of_service(form_copy)
     parsed_form['periodsOfService'].each do |service_info|
+      # values from the FE for military_branch are:
+      # ["Air Force", "Air Force Reserve", "Air National Guard", "Army", "Army National Guard", "Army Reserve",
+      # "Coast Guard", "Coast Guard Reserve", "Marine Corps", "Marine Corps Reserve", "Navy", "Navy Reserve"]
+      # these need to be formatted because LGY only accepts [ARMY, NAVY, MARINES, AIR_FORCE, COAST_GUARD, OTHER]
+      # and then we have to pass in ACTIVE_DUTY or RESERVE_NATIONAL_GUARD for service_type
+      military_branch = service_info['serviceBranch'].parameterize.underscore.upcase
+      service_type = 'ACTIVE_DUTY'
+
+      %w[RESERVE NATIONAL_GUARD].any? do |service_branch|
+        next unless military_branch.include?(service_branch)
+
+        index = military_branch.index('_NATIONAL_GUARD') || military_branch.index('_RESERVE')
+        military_branch = military_branch[0, index]
+        military_branch = 'AIR_FORCE' if military_branch == 'AIR' # Air National Guard is the only one that needs this
+        service_type = 'RESERVE_NATIONAL_GUARD'
+      end
+
       form_copy['periodsOfService'] << {
         'enteredOnDuty' => service_info['dateRange']['from'],
         'releasedActiveDuty' => service_info['dateRange']['to'],
-        'militaryBranch' => service_info['militaryBranch'].parameterize.underscore.upcase,
+        'militaryBranch' => military_branch,
+        'serviceType' => service_type,
         'disabilityIndicator' => false
       }
     end

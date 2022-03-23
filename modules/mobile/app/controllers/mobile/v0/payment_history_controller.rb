@@ -38,7 +38,11 @@ module Mobile
 
       def bgs_service_response
         person = BGS::PeopleService.new(current_user).find_person_by_participant_id
-        BGS::PaymentService.new(current_user).payment_history(person)
+        Rails.logger.info('Mobile Payment History Person not found for user icn: ', current_user.icn) if person.empty?
+        payment_history = BGS::PaymentService.new(current_user).payment_history(person)
+        raise Common::Exceptions::BackendServiceException, 'MOBL_502_upstream_error' if payment_history.nil?
+
+        payment_history
       end
 
       def available_years(payments)
@@ -56,12 +60,8 @@ module Mobile
         end
 
         payments.filter do |payment|
-          # staging data have nil dates not sure this happens in production
-          if payment[:date].nil?
-            Rails.logger.warn('mobile payment history record found with no date',
-                              user_icn: current_user.icn, payment_id: payment.id)
-            next
-          end
+          next if payment[:date].nil? # filter out future scheduled payments
+
           payment[:date].between?(start_date, end_date)
         end
       end

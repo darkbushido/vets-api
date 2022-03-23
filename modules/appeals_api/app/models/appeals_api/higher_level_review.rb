@@ -6,6 +6,10 @@ require 'common/exceptions'
 module AppealsApi
   class HigherLevelReview < ApplicationRecord
     include HlrStatus
+    include PdfOutputPrep
+
+    attr_readonly :auth_headers
+    attr_readonly :form_data
 
     scope :pii_expunge_policy, lambda {
       where('updated_at < ? AND status IN (?)', 7.days.ago, COMPLETE_STATUSES)
@@ -228,8 +232,9 @@ module AppealsApi
     end
 
     def update_status!(status:, code: nil, detail: nil)
+      current_status = self.status
       update_handler = Events::Handler.new(event_type: :hlr_status_updated, opts: {
-                                             from: self.status,
+                                             from: current_status,
                                              to: status,
                                              status_update_time: Time.zone.now.iso8601,
                                              statusable_id: id
@@ -244,7 +249,7 @@ module AppealsApi
 
       update!(status: status, code: code, detail: detail)
 
-      update_handler.handle!
+      update_handler.handle! unless status == current_status
       email_handler.handle! if status == 'submitted' && email_identifier.present?
     end
 
@@ -365,6 +370,10 @@ module AppealsApi
         [veteran_data.dig('address', 'addressLine1'),
          veteran_data.dig('address', 'addressLine2'),
          veteran_data.dig('address', 'addressLine3')].compact.map(&:strip).join(' ')
+    end
+
+    def clear_memoized_values
+      @contestable_issues = @veteran = @claimant = @address_combined = nil
     end
   end
 end

@@ -29,13 +29,18 @@ module AppealsApi
             signing_appellant.city,
             signing_appellant.state_code,
             signing_appellant.zip_code,
-            signing_appellant.country_code,
-            signing_appellant.international_postal_code
+            signing_appellant.country_code
           ].compact.join(', ')
         end
 
         def preferred_email
-          signing_appellant.email.presence
+          return 'See attached page for preferred email' if long_preferred_email?
+
+          signing_appellant.email
+        end
+
+        def long_preferred_email?
+          signing_appellant.email.length > 120
         end
 
         def veteran_homeless
@@ -75,11 +80,11 @@ module AppealsApi
         end
 
         def additional_pages
-          contestable_issues.size > 5 || extension_request? ? 1 : 'Off'
+          contestable_issues.size > 5 || extension_request? || long_preferred_email? ? 1 : 'Off'
         end
 
         def rep_name
-          representative&.dig('name')
+          representative&.dig('name') || ''
         end
 
         def signature

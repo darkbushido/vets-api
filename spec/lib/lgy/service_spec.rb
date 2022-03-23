@@ -165,6 +165,17 @@ describe LGY::Service do
         end
       end
     end
+
+    context 'when submitting a valid coe claim with prior loans' do
+      it 'returns a valid application response with prior loan data' do
+        VCR.use_cassette 'lgy/application_put' do
+          response = subject.put_application(payload: coe_claim)
+          expect(response.status).to eq 200
+          expect(response.body).to include('status')
+          expect(response.body['relevant_prior_loans']).not_to be_empty
+        end
+      end
+    end
   end
 
   describe '#post_document' do
@@ -182,6 +193,25 @@ describe LGY::Service do
           expect(response.status).to eq 201
           expect(response.body).to include('id')
           expect(response.body).to include('create_date')
+        end
+      end
+    end
+  end
+
+  describe '#get_coe_documents' do
+    context 'when retrieving the document list from LGY' do
+      before do
+        allow_any_instance_of(User).to receive(:icn).and_return('1012830245V504544')
+        allow_any_instance_of(User).to receive(:edipi).and_return('1007451748')
+      end
+
+      it 'returns a document list' do
+        VCR.use_cassette 'lgy/documents_list' do
+          response = subject.get_coe_documents
+          expect(response.status).to eq 200
+          expect(response.body).to include(include('id'))
+          expect(response.body).to include(include('create_date'))
+          expect(response.body).to include(include('description'))
         end
       end
     end
