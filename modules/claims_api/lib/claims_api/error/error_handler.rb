@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module ClaimsApi
   module Error
     module ErrorHandler
@@ -8,18 +10,19 @@ module ClaimsApi
       end
 
       private
+
       def token_validation_error
         json = {
           errors: [
             {
-              title: "Token Validation Error",
-              detail: "Invalid token.",
-              code: "401",
-              status: "401"
+              title: 'Token Validation Error',
+              detail: 'Invalid token.',
+              code: '401',
+              status: '401'
             }
           ]
         }
-        render json: json, status: 401
+        render json: json, status: :unauthorized
       end
     end
   end

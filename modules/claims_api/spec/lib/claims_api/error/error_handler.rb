@@ -40,12 +40,12 @@ describe ApplicationController, type: :request do
   let(:veteran_id) { '1013062086V794840' }
   let(:scopes) { %w[claim.write] }
   let(:get_poa_path) { "/services/benefits/v2/veterans/#{veteran_id}/power-of-attorney" }
-  
+
   it 'catches an invalid token' do
     with_okta_user(scopes) do |auth_header|
       allow(JWT).to receive(:decode).and_raise(JWT::DecodeError)
 
-      get get_poa_path, headers: {'Authorization'=>'Bearer bad_token'}
+      get get_poa_path, headers: auth_header
 
       parsed_body = JSON.parse(response.body)
       expect(parsed_body['errors'][0]['detail']).to eq('Invalid token.')
@@ -58,10 +58,10 @@ describe ApplicationController, type: :request do
       allow(JWT).to receive(:decode) do
         raise(JWT::ExpiredSignature) if i > 2
 
-        i +=1
+        i += 1
         okta_jwt(scopes)
       end
-      
+
       get get_poa_path, headers: auth_header
 
       parsed_body = JSON.parse(response.body)
