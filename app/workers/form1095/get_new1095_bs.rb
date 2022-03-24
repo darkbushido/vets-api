@@ -139,7 +139,7 @@ module Form1095
       true
     rescue => e
       Rails.logger.error(e.message)
-      return false
+      false
     end
 
     # downloading file to the disk and then reading that file,
