@@ -58,7 +58,7 @@ describe InheritedProofing::MHV::Service do
         allow_any_instance_of(described_class).to receive(:perform).and_raise(Common::Client::Errors::ClientError)
       end
 
-      it 'will return false if mhv service is down' do
+      it 'will return empty hash if mhv service is down' do
         expect(service_obj.send(:correlation_id)).to eq(nil)
         expect(service_obj.identity_proof_data).to eq({})
       end
