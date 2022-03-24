@@ -3,10 +3,11 @@
 module V0
   class Form1095BsController < ApplicationController
     before_action { authorize :form1095, :access? }
-    before_action :get_1095b
+    before_action :get_1095b, only: :download
+    before_action :get_available_forms, only: :available_forms
 
-    def last_updated
-      render json: { last_updated: @form.updated_at }
+    def available_forms
+      render json: { available_forms: @available_forms_arr }
     end
     
     def download
@@ -23,6 +24,11 @@ module V0
         Rails.logger.error("Form 1095-B for year #{download_params} not found", user_uuid: @current_user&.uuid)
         raise Common::Exceptions::RecordNotFound, download_params
       end
+    end
+
+    def get_available_forms
+      forms = Form1095B.get_available_forms(@current_user[:icn])
+      @available_forms_arr = forms.map { |form| { year: form[0], last_updated: form[1] } }
     end
 
     def download_params
