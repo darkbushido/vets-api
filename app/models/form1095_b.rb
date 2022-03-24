@@ -22,6 +22,7 @@ class Form1095B < ApplicationRecord
 
   private
 
+  # rubocop:disable Metrics/MethodLength
   def generate_pdf
     pdf = PdfForms.new(Settings.binaries.pdftk)
 
