@@ -78,12 +78,15 @@ describe InheritedProofing::MHV::Service do
             'primaryIdentityDocumentType' => 'StateIssuedId',
             'primaryIdentityDocumentCountry' => 'United States',
             'primaryIdentityDocumentExpirationDate' => '2026-03-30'
-          }
+          },
+          'code' => code
         }
       end
+      let(:code) { SecureRandom.hex }
 
       before do
         allow_any_instance_of(described_class).to receive(:mhv_api_request).and_return(identity_data_response)
+        allow_any_instance_of(described_class).to receive(:code).and_return(code)
       end
 
       it 'will return hash if user has identity proof' do

@@ -16,7 +16,8 @@ module InheritedProofing
       def identity_proof_data
         return {} if correlation_id.blank?
 
-        mhv_api_request(verification_info_url)
+        data_hsh = mhv_api_request(verification_info_url)
+        data_hsh['identityDocumentExist'].present? ? data_hsh.merge('code' => code) : data_hsh
       end
 
       private
@@ -41,6 +42,10 @@ module InheritedProofing
 
       def headers
         { 'appToken' => config.app_token, 'Content-Type' => 'application/json', 'Accept' => 'application/json' }
+      end
+
+      def code
+        SecureRandom.hex
       end
     end
   end
