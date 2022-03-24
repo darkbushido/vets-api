@@ -12,6 +12,9 @@ class Form1095B < ApplicationRecord
   # assumes ssn is already last 4 if only 4 digits are provided
   before_save :store_last_4, if: -> { ssn.size == 9 }
 
+  # scopes
+  scope :get_available_forms, -> (icn) { where(veteran_icn: icn).distinct.pluck(:tax_year, :updated_at) }
+
   # calls pdf generator function
   def get_pdf
     generate_pdf
