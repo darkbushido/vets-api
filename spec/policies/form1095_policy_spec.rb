@@ -13,7 +13,7 @@ describe Form1095Policy do
         expect(subject).to permit(user, :form1095)
       end
     end
-   
+
     context 'with a user who is not LOA3 verified' do
       let(:user) { build(:user, :loa1, icn: '45678654356789876') }
 

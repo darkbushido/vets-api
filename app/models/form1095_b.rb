@@ -71,7 +71,7 @@ class Form1095B < ApplicationRecord
     # TODO: try to return PDF without saving the file first
 
     file_contents = File.read(temp_location)
-    
+
     File.delete(temp_location)
 
     file_contents
