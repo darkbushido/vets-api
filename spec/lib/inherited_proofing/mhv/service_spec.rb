@@ -79,7 +79,8 @@ describe InheritedProofing::MHV::Service do
             'primaryIdentityDocumentCountry' => 'United States',
             'primaryIdentityDocumentExpirationDate' => '2026-03-30'
           },
-          'code' => code
+          'code' => code,
+          'user_uuid' => user.uuid
         }
       end
       let(:code) { SecureRandom.hex }
