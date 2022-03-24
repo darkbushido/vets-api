@@ -9,7 +9,7 @@ module V0
     def available_forms
       render json: { available_forms: @available_forms_arr }
     end
-    
+
     def download
       file_name = "1095B_#{download_params}.pdf"
       send_data @form.get_pdf, filename: file_name, type: 'application/pdf', disposition: 'attachment'

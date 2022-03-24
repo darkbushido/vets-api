@@ -37,7 +37,7 @@ Rails.application.routes.draw do
     resources :veteran_readiness_employment_claims, only: :create
     resource :virtual_agent_token, only: [:create], controller: :virtual_agent_token
     resources :preferred_facilities, only: %i[index create destroy]
-    
+
     get 'form1095_bs/download/:tax_year', to: 'form1095_bs#download'
     get 'form1095_bs/available_forms', to: 'form1095_bs#available_forms'
 

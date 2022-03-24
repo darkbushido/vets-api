@@ -63,7 +63,9 @@ RSpec.describe Form1095B, type: :request do
 
     it 'returns last updated object' do
       get '/v0/form1095_bs/available_forms'
-      expect(response.body).to eq({ available_forms: [{ year: subject.tax_year, last_updated: subject.updated_at }] }.to_json)
+      expect(response.body).to eq(
+        { available_forms: [{ year: subject.tax_year,last_updated: subject.updated_at }] }.to_json
+      )
     end
   end
 

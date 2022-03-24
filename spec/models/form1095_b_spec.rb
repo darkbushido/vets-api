@@ -4,7 +4,7 @@ require 'rails_helper'
 
 RSpec.describe Form1095B, type: :model do
   subject { create :form1095_b }
-  
+
   describe 'validations' do
     describe '#unique_icn_and_year' do
       context 'unique icn + year combo' do
