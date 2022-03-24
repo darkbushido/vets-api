@@ -12,17 +12,18 @@ Rails.application.routes.draw do
       to: 'v1/sessions#new',
       constraints: ->(request) { V1::SessionsController::REDIRECT_URLS.include?(request.path_parameters[:type]) }
   get '/v1/sessions/ssoe_logout', to: 'v1/sessions#ssoe_slo_callback'
-  get '/v1/sessions/logingov_inherited_proofing', to: 'v1/sessions#logingov_inherited_proofing'
 
   get '/sign_in/:type/authorize',
       to: 'sign_in#authorize',
       constraints: ->(request) { SignInController::REDIRECT_URLS.include?(request.path_parameters[:type]) }
-  get '/sign_in/:type/callback',
+      get '/sign_in/:type/callback',
       to: 'sign_in#callback',
       constraints: ->(request) { SignInController::REDIRECT_URLS.include?(request.path_parameters[:type]) }
   post '/sign_in/refresh', to: 'sign_in#refresh'
   post '/sign_in/token', to: 'sign_in#token'
   get '/sign_in/introspect', to: 'sign_in#introspect'
+  
+  get '/inherited_proofing/auth', to: 'inherited_proofing#auth'
 
   namespace :v0, defaults: { format: 'json' } do
     resources :onsite_notifications, only: %i[create index update]
