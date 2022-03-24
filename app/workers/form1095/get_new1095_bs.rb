@@ -39,45 +39,61 @@ module Form1095
       addr1.concat(' ', addr2 || '', ' ', addr3 || '').strip
     end
 
+    def get_form_fields(data)
+      fields = {}
+      data.each_with_index do |field, ndx|
+        next if ndx < 3
+
+        vals = field.split('=')
+        fields[vals[0].to_sym] = vals[1] || nil
+      end
+
+      fields
+    end
+
+    def get_coverage_array(form_fields)
+      coverage_arr = []
+      i = 1
+      while i <= 13
+        val = "H#{i < 10 ? '0' : ''}#{i}"
+        coverage_arr.push(form_fields[val.to_sym] ? true : false)
+
+        i += 1
+      end
+
+      coverage_arr
+    end
+
+    def produce_1095_hash(form_fields, unique_id, coverage_arr)
+      {
+        unique_id: unique_id,
+        last_name: form_fields[:A01],
+        first_name: form_fields[:A02],
+        middle_name: form_fields[:A03],
+        veteran_icn: form_fields[:A15].gsub(/\A0{6}|0{6}\z/, ''),
+        ssn: form_fields[:A16],
+        birth_date: form_fields[:N03],
+        address: gen_address(form_fields[:B01], form_fields[:B02], form_fields[:B03]),
+        city: form_fields[:B04],
+        state: form_fields[:B05],
+        country: form_fields[:B06],
+        zip_code: form_fields[:B07],
+        foreign_zip: form_fields[:B08],
+        province: form_fields[:B10],
+        coverage_months: coverage_arr
+      }
+    end
+
     def parse_form(form)
       data = form.split('^')
 
       unique_id = data[2]
 
-      temp = {}
-      data.each_with_index do |field, ndx|
-        next if ndx < 3
+      form_fields = get_form_fields(data)
 
-        vals = field.split('=')
-        temp[vals[0].to_sym] = vals[1] || nil
-      end
+      coverage_arr = get_coverage_array(form_fields)
 
-      coverage_arr = []
-      i = 1
-      while i <= 13
-        val = "H#{i < 10 ? '0' : ''}#{i}"
-        coverage_arr.push(temp[val.to_sym] ? true : false)
-
-        i += 1
-      end
-
-      {
-        unique_id: unique_id,
-        last_name: temp[:A01],
-        first_name: temp[:A02],
-        middle_name: temp[:A03],
-        veteran_icn: temp[:A15].gsub(/\A0{6}|0{6}\z/, ''),
-        ssn: temp[:A16],
-        birth_date: temp[:N03],
-        address: gen_address(temp[:B01], temp[:B02], temp[:B03]),
-        city: temp[:B04],
-        state: temp[:B05],
-        country: temp[:B06],
-        zip_code: temp[:B07],
-        foreign_zip: temp[:B08],
-        province: temp[:B10],
-        coverage_months: coverage_arr
-      }
+      produce_1095_hash(form_fields, unique_id, coverage_arr)
     end
 
     def save_data?(form_data)
@@ -93,17 +109,43 @@ module Form1095
 
       if existing_form.nil?
         form = Form1095B.new(form_data)
-        return form.save
+        form.save
       else
-        return existing_form.update(form_data)
+        existing_form.update(form_data)
       end
+    end
+
+    def process_file?(temp_file_name)
+      file = File.open(temp_file_name, 'r')
+
+      file.each_line do |form|
+        data = parse_form(form)
+
+        data[:tax_year] = file_details[:tax_year]
+        data[:is_corrected] = !file_details[:isOg?]
+        data[:is_beneficiary] = file_details[:is_dep_file?]
+        unique_id = data[:unique_id]
+        data.delete(:unique_id)
+
+        unless save_data?(data)
+          Rails.logger.error "Failed on form with unique ID: #{unique_id}"
+          return false
+        end
+      end
+
+      File.delete(file)
+      file.close
+
+      true
+    rescue => e
+      Rails.logger.error(e.message)
+      return false
     end
 
     # downloading file to the disk and then reading that file,
     # this will allow us to read large S3 files without exhausting resources/crashing the system
-    def process_file?(file_name)
+    def download_and_process_file?(file_name)
       Rails.logger.info "processing file: #{file_name}"
-      return false unless file_name.include?('.txt')
 
       file_details = parse_file_name(file_name)
 
@@ -111,34 +153,11 @@ module Form1095
 
       # downloads S3 file into local file, allows for processing large files this way
       temp_file_name = "lib/form1095_b/temp_files/#{file_name}"
-      begin
-        bucket.object(file_name).get(response_target: temp_file_name)
 
-        file = File.open(temp_file_name, 'r')
+      # downloads file into temp_file_name
+      bucket.object(file_name).get(response_target: temp_file_name)
 
-        file.each_line do |form|
-          data = parse_form(form)
-
-          data[:tax_year] = file_details[:tax_year]
-          data[:is_corrected] = !file_details[:isOg?]
-          data[:is_beneficiary] = file_details[:is_dep_file?]
-          unique_id = data[:unique_id]
-          data.delete(:unique_id)
-
-          unless save_data?(data)
-            Rails.logger.error "Failed on form with unique ID: #{unique_id}"
-            return false
-          end
-        end
-
-        File.delete(file)
-        file.close
-      rescue => e
-        Rails.logger.error(e.message)
-        return false
-      end
-
-      true
+      process_file?(temp_file_name)
     end
 
     def perform
@@ -148,7 +167,7 @@ module Form1095
       Rails.logger.info 'No new 1095 files found' if file_names.empty?
 
       file_names.each do |file_name|
-        if process_file?(file_name)
+        if download_and_process_file?(file_name)
           Rails.logger.info "#{file_name} read successfully, deleting file from S3"
           bucket.delete_objects(delete: { objects: [{ key: file_name }] })
         else
