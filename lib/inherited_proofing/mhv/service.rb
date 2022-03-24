@@ -4,6 +4,12 @@ require 'inherited_proofing/mhv/configuration'
 
 module InheritedProofing
   module MHV
+    # This class will interact with MHV and return a hash of user data.
+    # If the user is eligible for inherited proofing the result will be a
+    # hash of identity data with an included code we will cache and send
+    # to login.gov. If the user is not eligible the result will be a hash
+    # of error information. If the entire service fails for whatever
+    # reason the result will be an empty hash.
     class Service < Common::Client::Base
       configuration InheritedProofing::MHV::Configuration
 
