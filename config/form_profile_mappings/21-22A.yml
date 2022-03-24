@@ -1,3 +1,5 @@
 address: [contact_information, address]
+fullName: [identity_information, full_name]
+dateOfBirth: [identity_information, date_of_birth]
 email: [contact_information, email]
 phone: [contact_information, us_phone]

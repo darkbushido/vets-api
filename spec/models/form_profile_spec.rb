@@ -815,6 +815,12 @@ RSpec.describe FormProfile, type: :model do
   let(:v21_22a_expected) do
     {
       'address' => address,
+      'fullName' => {
+        'first' => user.first_name&.capitalize,
+        'last' => user.last_name&.capitalize,
+        'suffix' => user.suffix
+      },
+      'dateOfBirth' => user.birth_date,
       'email' => user.pciu_email,
       'phone' => us_phone
     }
