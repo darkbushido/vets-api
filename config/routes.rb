@@ -16,7 +16,7 @@ Rails.application.routes.draw do
   get '/sign_in/:type/authorize',
       to: 'sign_in#authorize',
       constraints: ->(request) { SignInController::REDIRECT_URLS.include?(request.path_parameters[:type]) }
-      get '/sign_in/:type/callback',
+  get '/sign_in/:type/callback',
       to: 'sign_in#callback',
       constraints: ->(request) { SignInController::REDIRECT_URLS.include?(request.path_parameters[:type]) }
   post '/sign_in/refresh', to: 'sign_in#refresh'
