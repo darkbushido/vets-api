@@ -155,7 +155,7 @@ development: &defaults
     each_ttl: 1800
   mhv_identity_data:
     namespace: mhv_identity_data
-    each_ttl: 1800
+    each_ttl: 5400
   transaction_notification:
     namespace: transaction_notification
     each_ttl: 2592000
