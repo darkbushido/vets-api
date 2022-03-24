@@ -12,6 +12,7 @@ Rails.application.routes.draw do
       to: 'v1/sessions#new',
       constraints: ->(request) { V1::SessionsController::REDIRECT_URLS.include?(request.path_parameters[:type]) }
   get '/v1/sessions/ssoe_logout', to: 'v1/sessions#ssoe_slo_callback'
+  get '/v1/sessions/logingov_inherited_proofing', to: 'v1/sessions#logingov_inherited_proofing'
 
   get '/sign_in/:type/authorize',
       to: 'sign_in#authorize',

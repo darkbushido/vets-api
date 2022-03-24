@@ -7,6 +7,7 @@ require 'saml/responses/login'
 require 'saml/responses/logout'
 require 'saml/ssoe_settings_service'
 require 'login/after_login_actions'
+require 'logingov_inherited_proofing/service'
 
 module V1
   class SessionsController < ApplicationController
@@ -75,6 +76,16 @@ module V1
     def metadata
       meta = OneLogin::RubySaml::Metadata.new
       render xml: meta.generate(saml_settings), content_type: 'application/xml'
+    end
+
+    def logingov_inherited_proofing
+      load_user
+      return unless @current_user
+
+      render body: logingov_inherited_proofing_service.render_auth(auth_code: @current_user.verify_auth_code),
+             content_type: 'text/html'
+    rescue => e
+      render json: { errors: e }, status: :bad_request
     end
 
     private
@@ -386,6 +397,10 @@ module V1
                                                 user: current_user,
                                                 params: params,
                                                 loa3_context: LOA::IDME_LOA3)
+    end
+
+    def logingov_inherited_proofing_service
+      @logingov_inherited_proofing_service ||= LogingovInheritedProofing::Service.new
     end
   end
 end

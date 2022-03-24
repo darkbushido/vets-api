@@ -446,6 +446,10 @@ class User < Common::RedisStore
     @relationships ||= get_relationships_array
   end
 
+  def verify_auth_code
+    @verify_auth_code ||= SecureRandom.hex
+  end
+
   private
 
   def mpi
