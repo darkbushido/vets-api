@@ -14,12 +14,6 @@ module RapidReadyForDecision
     # https://github.com/mperham/sidekiq/issues/2168#issuecomment-72079636
     sidekiq_options retry: 8
 
-    sidekiq_retries_exhausted do |msg, _ex|
-      submission_id = msg['args'].first
-      submission = Form526Submission.new
-      submission.start_evss_submission(nil, { 'submission_id' => submission_id })
-    end
-
     # @return if this claim submission was processed and fast-tracked by RRD
     def self.rrd_claim_processed?(submission)
       submission.form_json.include? RapidReadyForDecision::HypertensionUploadManager::DOCUMENT_TITLE
@@ -42,7 +36,7 @@ module RapidReadyForDecision
       begin
         with_tracking(self.class.name, form526_submission.saved_claim_id, form526_submission_id) do
           assessed_data = assess_data(form526_submission)
-          next if assessed_data.nil?
+          return if assessed_data.nil?
 
           add_medical_stats(form526_submission, assessed_data)
 
@@ -117,13 +111,11 @@ module RapidReadyForDecision
     end
 
     def account(form526_submission)
-      user_uuid = form526_submission.user_uuid.presence
+      account = Account.lookup_by_user_uuid(form526_submission.user_uuid)
+      return account if account
+
       edipi = form526_submission.auth_headers['va_eauth_dodedipnid'].presence
-      # rubocop:disable Lint/UselessAssignment
-      account = Account.find_by(idme_uuid: user_uuid) if user_uuid
-      account ||= Account.find_by(logingov_uuid: user_uuid) if user_uuid
-      account ||= Account.find_by(edipi: edipi) if edipi
-      # rubocop:enable Lint/UselessAssignment
+      Account.find_by(edipi: edipi) if edipi
     end
 
     def upload_pdf(form526_submission, pdf)
