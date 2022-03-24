@@ -16,11 +16,11 @@ module Form1095
 
     def get_bucket_files
       # grabs available file names from bucket
-      bucket.objects({prefix: 'MEC', delimiter: '/'}).collect(&:key)
+      bucket.objects({ prefix: 'MEC', delimiter: '/' }).collect(&:key)
     end
 
     def parse_file_name(file_name)
-      return {} unless file_name.present?
+      return {} if file_name.blank?
 
       file_values = file_name.sub('.txt', '').split('_')
 
@@ -28,10 +28,10 @@ module Form1095
       ts = file_values[-1]
 
       {
-        :is_dep_file? => file_values.include?('B'),
-        :isOg? => file_values.include?('O'),
-        :tax_year => year,
-        :timestamp => ts
+        is_dep_file?: file_values.include?('B'),
+        isOg?: file_values.include?('O'),
+        tax_year: year,
+        timestamp: ts
       }
     end
 
@@ -54,9 +54,9 @@ module Form1095
 
       coverage_arr = []
       i = 1
-      while i <= 13 do
-        val = "H#{i < 10 ? '0' : ''}#{i.to_s}"
-        coverage_arr.push((temp[val.to_sym]) ? true : false)
+      while i <= 13
+        val = "H#{i < 10 ? '0' : ''}#{i}"
+        coverage_arr.push(temp[val.to_sym] ? true : false)
 
         i += 1
       end
@@ -81,15 +81,14 @@ module Form1095
     end
 
     def save_data?(form_data)
+      existing_form = Form1095B.find_by(veteran_icn: form_data[:veteran_icn], tax_year: form_data[:tax_year])
 
-      existing_form = Form1095B.find_by(:veteran_icn => form_data[:veteran_icn], :tax_year => form_data[:tax_year])
-
-      if !form_data[:is_corrected] and existing_form.present?  # returns true to indicate successful entry
-        Rails.logger.warn "Form for #{form_data[:tax_year]} already exists, but file is for Original 1095-B forms. Skipping this entry."
-        return true 
-      elsif form_data[:is_corrected] and existing_form.nil?
-        Rails.logger.warn "Form for year #{form_data[:tax_year]} not found, but file is for Corrected 1095-B forms. Skipping this entry."
-        return true  # return false here?? (or create form?) if is a correction, then it should already exist
+      if !form_data[:is_corrected] && existing_form.present? # returns true to indicate successful entry
+        Rails.logger.warn "Form for #{form_data[:tax_year]} already exists, but file is for Original 1095-B forms."
+        return true
+      elsif form_data[:is_corrected] && existing_form.nil?
+        Rails.logger.warn "Form for year #{form_data[:tax_year]} not found, but file is for Corrected 1095-B forms."
+        return true # return false here?? (or create form?) if is a correction, then it should already exist
       end
 
       if existing_form.nil?
@@ -98,23 +97,22 @@ module Form1095
       else
         return existing_form.update(form_data)
       end
-
-      false
     end
 
-    # downloading file to the disk and then reading that file, this will allow us to read large S3 files without exhausting resources/crashing the system
+    # downloading file to the disk and then reading that file,
+    # this will allow us to read large S3 files without exhausting resources/crashing the system
     def process_file?(file_name)
       Rails.logger.info "processing file: #{file_name}"
       return false unless file_name.include?('.txt')
 
       file_details = parse_file_name(file_name)
 
-      return false unless file_details.present?
+      return false if file_details.blank?
 
       # downloads S3 file into local file, allows for processing large files this way
       temp_file_name = "lib/form1095_b/temp_files/#{file_name}"
       begin
-        file = bucket.object(file_name).get(response_target: temp_file_name)
+        bucket.object(file_name).get(response_target: temp_file_name)
 
         file = File.open(temp_file_name, 'r')
 
