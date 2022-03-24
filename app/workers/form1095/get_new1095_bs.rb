@@ -1,9 +1,10 @@
+# frozen_string_literal: true
+
 require 'sidekiq-scheduler'
 
 module Form1095
   class GetNew1095Bs
     include Sidekiq::Worker
-
 
     def bucket
       @bucket ||= Aws::S3::Resource.new(
@@ -13,12 +14,10 @@ module Form1095
       ).bucket(Settings.form1095_b.s3.bucket)
     end
 
-
     def get_bucket_files
       # grabs available file names from bucket
       bucket.objects({prefix: 'MEC', delimiter: '/'}).collect(&:key)
     end
-
 
     def parse_file_name(file_name)
       return {} unless file_name.present?
@@ -36,11 +35,9 @@ module Form1095
       }
     end
 
-
     def gen_address(addr1, addr2, addr3)
-      addr1.concat(" ", addr2 || "", " ", addr3 || "").strip # shouldn't be an addr3 if addr 2 doesn't exist, so no worries about double space in middle
+      addr1.concat(' ', addr2 || '', ' ', addr3 || '').strip
     end
-
 
     def parse_form(form)
       data = form.split('^')
@@ -58,31 +55,30 @@ module Form1095
       coverage_arr = []
       i = 1
       while i <= 13 do
-        val = "H".concat(i < 10 ? "0" : "", i.to_s)
+        val = "H#{i < 10 ? '0' : ''}#{i.to_s}"
         coverage_arr.push((temp[val.to_sym]) ? true : false)
 
         i += 1
       end
 
       {
-        :unique_id => unique_id,
-        :last_name => temp[:A01],
-        :first_name => temp[:A02],
-        :middle_name => temp[:A03],
-        :veteran_icn => temp[:A15].gsub(/\A0{6}|0{6}\z/, ''),
-        :ssn => temp[:A16],
-        :birth_date => temp[:N03],
-        :address => gen_address(temp[:B01], temp[:B02], temp[:B03]),
-        :city => temp[:B04],
-        :state => temp[:B05],
-        :country => temp[:B06],
-        :zip_code => temp[:B07],
-        :foreign_zip => temp[:B08],
-        :province => temp[:B10],
-        :coverage_months => coverage_arr
+        unique_id: unique_id,
+        last_name: temp[:A01],
+        first_name: temp[:A02],
+        middle_name: temp[:A03],
+        veteran_icn: temp[:A15].gsub(/\A0{6}|0{6}\z/, ''),
+        ssn: temp[:A16],
+        birth_date: temp[:N03],
+        address: gen_address(temp[:B01], temp[:B02], temp[:B03]),
+        city: temp[:B04],
+        state: temp[:B05],
+        country: temp[:B06],
+        zip_code: temp[:B07],
+        foreign_zip: temp[:B08],
+        province: temp[:B10],
+        coverage_months: coverage_arr
       }
     end
-
 
     def save_data?(form_data)
 
@@ -92,7 +88,7 @@ module Form1095
         Rails.logger.warn "Form for #{form_data[:tax_year]} already exists, but file is for Original 1095-B forms. Skipping this entry."
         return true 
       elsif form_data[:is_corrected] and existing_form.nil?
-        Rails.logger.warn "Form for year #{form_data[:tax_year]} not found, but file is for Corrected 1095-B forms. Skipping this entry." # ...?
+        Rails.logger.warn "Form for year #{form_data[:tax_year]} not found, but file is for Corrected 1095-B forms. Skipping this entry."
         return true  # return false here?? (or create form?) if is a correction, then it should already exist
       end
 
@@ -106,11 +102,10 @@ module Form1095
       false
     end
 
-
     # downloading file to the disk and then reading that file, this will allow us to read large S3 files without exhausting resources/crashing the system
     def process_file?(file_name)
-      Rails.logger.info "processing file: " + file_name
-      return false unless file_name.include?(".txt")
+      Rails.logger.info "processing file: #{file_name}"
+      return false unless file_name.include?('.txt')
 
       file_details = parse_file_name(file_name)
 
@@ -121,7 +116,7 @@ module Form1095
       begin
         file = bucket.object(file_name).get(response_target: temp_file_name)
 
-        file = File.open(temp_file_name, "r")
+        file = File.open(temp_file_name, 'r')
 
         file.each_line do |form|
           data = parse_form(form)
@@ -148,12 +143,11 @@ module Form1095
       true
     end
 
-
     def perform
-      Rails.logger.info "Checking for new 1095-B data"
+      Rails.logger.info 'Checking for new 1095-B data'
 
       file_names = get_bucket_files
-      Rails.logger.info "No new 1095 files found" if file_names.empty?
+      Rails.logger.info 'No new 1095 files found' if file_names.empty?
 
       file_names.each do |file_name|
         if process_file?(file_name)
