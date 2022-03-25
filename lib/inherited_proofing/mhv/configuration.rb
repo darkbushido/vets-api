@@ -5,20 +5,20 @@ require 'common/client/configuration/rest'
 module InheritedProofing
   module MHV
     class Configuration < Common::Client::Configuration::REST
+      def base_path
+        Settings.mhv.inherited_proofing.base_path
+      end
+
       def valid_id_url
-        Settings.mhv.inherited_proofing.valid_id_url
+        "#{Settings.mhv.inherited_proofing.base_path}/validmhvid"
       end
 
       def vacct_info_url
-        Settings.mhv.inherited_proofing.vacct_info_url
+        "#{Settings.mhv.inherited_proofing.base_path}/mhvacctinfo"
       end
 
       def app_token
         Settings.mhv.inherited_proofing.app_token
-      end
-
-      def base_path
-        Settings.mhv.inherited_proofing.base_path
       end
 
       def service_name

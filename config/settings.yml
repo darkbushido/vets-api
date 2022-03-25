@@ -428,8 +428,6 @@ mhv:
     mock: false
   inherited_proofing:
     base_path: https://somethingfake.com
-    valid_id_url: https://somethingfake.com
-    vacct_info_url: https://somethingfake.com
     app_token: fake-app-token
     mock: true
 
