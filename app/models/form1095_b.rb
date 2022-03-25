@@ -83,6 +83,7 @@ class Form1095B < ApplicationRecord
     Rails.logger.error e
     raise e
   end
+  # rubocop:enable Metrics/MethodLength
 
   def store_last_4
     self.ssn = ssn[-4..]
