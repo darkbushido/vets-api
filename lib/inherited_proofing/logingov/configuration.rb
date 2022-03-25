@@ -67,7 +67,7 @@ module InheritedProofing
           headers: base_request_headers,
           request: request_options,
           ssl: { client_cert: ssl_cert,
-                client_key: ssl_key }
+                 client_key: ssl_key }
         ) do |conn|
           conn.use :breakers
           conn.use Faraday::Response::RaiseError

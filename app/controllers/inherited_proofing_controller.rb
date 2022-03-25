@@ -10,6 +10,7 @@ class InheritedProofingController < ApplicationController
 
     mhv_data = mhv_inherited_proofing_service(@current_user).identity_proof_data
     return unless mhv_data['code'].exists?
+
     store_mhv_data(mhv_data)
     render body: logingov_inherited_proofing_service.render_auth(auth_code: mhv_data[:code]),
            content_type: 'text/html'
