@@ -14,12 +14,6 @@ module RapidReadyForDecision
     # https://github.com/mperham/sidekiq/issues/2168#issuecomment-72079636
     sidekiq_options retry: 8
 
-    sidekiq_retries_exhausted do |msg, _ex|
-      submission_id = msg['args'].first
-      submission = Form526Submission.find(submission_id)
-      submission.start_evss_submission_job
-    end
-
     STATSD_KEY_PREFIX = 'worker.fast_track.disability_compensation_job'
 
     def perform(form526_submission_id)
@@ -30,6 +24,8 @@ module RapidReadyForDecision
           client = Lighthouse::VeteransHealth::Client.new(get_icn(form526_submission))
 
           return if bp_readings(client).blank?
+
+          add_bp_readings_stats(form526_submission, bp_readings(client))
 
           pdf = pdf(patient_info(form526_submission), bp_readings(client), medications(client))
           upload_pdf_and_attach_special_issue(form526_submission, pdf)
@@ -58,6 +54,11 @@ module RapidReadyForDecision
     def medications(client)
       @medications ||= client.list_resource('medication_requests')
       @medications.present? ? RapidReadyForDecision::HypertensionMedicationRequestData.new(@medications).transform : []
+    end
+
+    def add_bp_readings_stats(form526_submission, bp_readings)
+      med_stats_hash = { bp_readings_count: bp_readings.size }
+      RapidReadyForDecision::Form526BaseJob.add_medical_stats_hash(form526_submission, med_stats_hash)
     end
 
     def send_fast_track_engineer_email_for_testing(form526_submission_id, error_message, backtrace)
