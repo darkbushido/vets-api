@@ -427,9 +427,11 @@ mhv:
   account:
     mock: false
   inherited_proofing:
-    base_path: https://essapi-sysb.myhealth.va.gov/mhv-api/patient/v1/multicorr
-    valid_id_url: https://essapi-sysb.myhealth.va.gov/mhv-api/patient/v1/multicorr/validmhvid
-    vacct_info_url: https://essapi-sysb.myhealth.va.gov/mhv-api/patient/v1/multicorr/mhvacctinfo
+    base_path: https://somethingfake.com
+    valid_id_url: https://somethingfake.com
+    vacct_info_url: https://somethingfake.com
+    app_token: fake-app-token
+    mock: true
 
 # Settings for alternate MHV integration for mobile app
 mhv_mobile:

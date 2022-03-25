@@ -14,7 +14,7 @@ module InheritedProofing
       end
 
       def app_token
-        Settings.mhv.rx.app_token
+        Settings.mhv.inherited_proofing.app_token
       end
 
       def base_path
@@ -31,6 +31,7 @@ module InheritedProofing
           headers: base_request_headers,
           request: request_options
         ) do |conn|
+          conn.response :betamocks if Settings.mhv.inherited_proofing.mock
           conn.use :breakers
           conn.use Faraday::Response::RaiseError
           conn.response :snakecase
