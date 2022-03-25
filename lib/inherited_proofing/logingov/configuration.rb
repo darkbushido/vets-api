@@ -49,14 +49,6 @@ module InheritedProofing
         'openid_connect/authorize'
       end
 
-      def token_path
-        'api/openid_connect/token'
-      end
-
-      def userinfo_path
-        'api/openid_connect/userinfo'
-      end
-
       def ssl_key
         OpenSSL::PKey::RSA.new(File.read(client_key_path))
       end
@@ -66,7 +58,7 @@ module InheritedProofing
       end
 
       def service_name
-        'logingov'
+        'logingov_inherited_proofing'
       end
 
       def connection
