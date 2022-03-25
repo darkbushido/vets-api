@@ -4,12 +4,9 @@ require 'inherited_proofing/mhv/configuration'
 
 module InheritedProofing
   module MHV
-    # This class will interact with MHV and return a hash of user data.
-    # If the user is eligible for inherited proofing the result will be a
-    # hash of identity data with an included code we will cache and send
-    # to login.gov. If the user is not eligible the result will be a hash
-    # of error information. If the entire service fails for whatever
-    # reason the result will be an empty hash.
+    # This class will interact with MHV and retrieve relevant user identity
+    # data. It will return nil if the user is not eligible for inherited proofing.
+    # Otherwise it will cache the relevant data and return the necessary code.
     class Service < Common::Client::Base
       configuration InheritedProofing::MHV::Configuration
 
@@ -19,17 +16,29 @@ module InheritedProofing
         @user = user
       end
 
-      def identity_proof_data
-        return {} if correlation_id.blank?
+      def cache_code
+        return if identity_document_missing?
 
-        data_hsh = mhv_api_request(verification_info_url)
-        data_hsh['identityDocumentExist'].present? ? data_hsh.merge(success_attributes) : data_hsh
+        cache_identity_data
+        code
       end
 
       private
 
+      def identity_proof_data
+        @identity_proof_data ||= begin
+          return {} if correlation_id.blank?
+
+          mhv_api_request(verification_info_url)
+        end
+      end
+
       def correlation_id
         @correlation_id ||= user.mhv_correlation_id.presence || mhv_api_request(correlation_id_url)['correlationId']
+      end
+
+      def cache_identity_data
+        InheritedProofing::MHVIdentityData.new(user_uuid: user.uuid, code: code, data: identity_proof_data).save!
       end
 
       def correlation_id_url
@@ -50,12 +59,12 @@ module InheritedProofing
         { 'appToken' => config.app_token, 'Content-Type' => 'application/json', 'Accept' => 'application/json' }
       end
 
-      def success_attributes
-        { 'code' => code, 'user_uuid' => user.uuid }
+      def identity_document_missing?
+        identity_proof_data['identityDocumentExist'].blank?
       end
 
       def code
-        SecureRandom.hex
+        @code ||= SecureRandom.hex
       end
     end
   end

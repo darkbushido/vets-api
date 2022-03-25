@@ -48,7 +48,7 @@ describe InheritedProofing::MHV::Service do
 
       it 'will fail if user is not found' do
         expect(service_obj.send(:correlation_id)).to eq(nil)
-        expect(service_obj.identity_proof_data).to eq({})
+        expect(service_obj.cache_code).to eq(nil)
       end
     end
 
@@ -60,7 +60,7 @@ describe InheritedProofing::MHV::Service do
 
       it 'will return empty hash if mhv service is down' do
         expect(service_obj.send(:correlation_id)).to eq(nil)
-        expect(service_obj.identity_proof_data).to eq({})
+        expect(service_obj.cache_code).to eq(nil)
       end
     end
   end
@@ -91,7 +91,7 @@ describe InheritedProofing::MHV::Service do
       end
 
       it 'will return hash if user has identity proof' do
-        expect(service_obj.identity_proof_data).to eq(identity_data_response)
+        expect(service_obj.cache_code).to eq(code)
       end
     end
 
@@ -108,7 +108,7 @@ describe InheritedProofing::MHV::Service do
       end
 
       it 'will return empty hash if user does not have identity proof' do
-        expect(service_obj.identity_proof_data).to eq(identity_data_failed_response)
+        expect(service_obj.cache_code).to eq(nil)
       end
     end
 
@@ -118,7 +118,7 @@ describe InheritedProofing::MHV::Service do
       end
 
       it 'will return empty hash if mhv service is down' do
-        expect(service_obj.identity_proof_data).to eq({})
+        expect(service_obj.cache_code).to eq(nil)
       end
     end
   end
