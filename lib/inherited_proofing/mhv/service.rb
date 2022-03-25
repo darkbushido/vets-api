@@ -9,8 +9,17 @@ module InheritedProofing
         ConfigMethods.new.correlation_id_api_request(icn)
       end
 
+<<<<<<< HEAD
       def self.get_verification_data(correlation_id)
         ConfigMethods.new.verification_info_api_request(correlation_id)
+=======
+      def identity_proof_data
+        return {} if correlation_id.blank?
+
+        data_hsh = mhv_api_request(verification_info_url)
+        require 'pry'; binding.pry
+        data_hsh['identityDocumentExist'].present? ? data_hsh.merge('code' => code) : data_hsh
+>>>>>>> adds inherited_proofing_controller spec
       end
 
       class ConfigMethods < Common::Client::Base
