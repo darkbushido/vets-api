@@ -30,7 +30,7 @@ module DhpConnectedDevices
       # @return [String]
       #
       def auth_url
-        "#{@client.auth_url}&code_challenge=#{CODE_CHALLENGE}&code_challenge_method=S256"
+        "#{client.auth_url}&code_challenge=#{CODE_CHALLENGE}&code_challenge_method=S256"
       end
 
       def headers

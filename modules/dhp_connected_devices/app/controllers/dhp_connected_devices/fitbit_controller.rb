@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'fitbit/client'
+
 module DhpConnectedDevices
   class FitbitController < ApplicationController
     skip_before_action :authenticate
