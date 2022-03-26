@@ -5,11 +5,11 @@ require 'inherited_proofing/mhv/configuration'
 module InheritedProofing
   module MHV
     class Service
-      def self.get_correlation_id_hash(icn)
+      def self.get_correlation_data(icn)
         ConfigMethods.new.correlation_id_api_request(icn)
       end
 
-      def self.get_verification_hash(correlation_id)
+      def self.get_verification_data(correlation_id)
         ConfigMethods.new.verification_info_api_request(correlation_id)
       end
 
