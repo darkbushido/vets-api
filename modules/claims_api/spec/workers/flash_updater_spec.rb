@@ -27,7 +27,7 @@ RSpec.describe ClaimsApi::FlashUpdater, type: :job do
     end.to change(subject.jobs, :size).by(1)
   end
 
-  it 'submits successfully with claim id' do
+  xit 'submits successfully with claim id' do
     expect do
       subject.perform_async(user, flashes, auto_claim_id: claim.id)
     end.to change(subject.jobs, :size).by(1)
