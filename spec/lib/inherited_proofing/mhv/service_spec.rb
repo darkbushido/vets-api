@@ -6,7 +6,7 @@ require 'inherited_proofing/mhv/service'
 describe InheritedProofing::MHV::Service do
   let(:icn) { '1013459302V141714' }
   let(:correlation_id) { 19031408 } # rubocop:disable Style/NumericLiterals
-  let(:config_class) { config_class }
+  let(:config_class) { described_class::ConfigMethods }
   let(:correlation_id_response) do
     {
       'correlationId' => correlation_id,
