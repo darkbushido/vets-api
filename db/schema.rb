@@ -494,6 +494,7 @@ ActiveRecord::Schema.define(version: 2022_03_24_182532) do
     t.string "veteran_icn", null: false
     t.integer "tax_year", null: false
     t.jsonb "form_data_ciphertext", null: false
+    t.text "encrypted_kms_key"
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
     t.index ["veteran_icn", "tax_year"], name: "index_form1095_bs_on_veteran_icn_and_tax_year", unique: true
