@@ -55,9 +55,7 @@ module RapidReadyForDecision
 
     # @return [Boolean] Is the specified disability RRD-enabled according to Flipper settings
     def rrd_enabled_disability?(disability)
-      # Todo later: Remove old RRD-related Flipper keys "disability_#{disability.downcase}_compensation_fast_track"
-      Flipper.enabled?("rrd_#{disability.downcase}_compensation".to_sym) ||
-        Flipper.enabled?("disability_#{disability.downcase}_compensation_fast_track".to_sym)
+      Flipper.enabled?("rrd_#{disability.downcase}_compensation".to_sym)
     end
 
     def form_disabilities
