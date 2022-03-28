@@ -29,10 +29,10 @@ describe VANotify::FindInProgressForms do
     context 'only fetches saved forms based on the correct cadence' do
       it '7 days' do
         create_in_progress_form_days_ago(6, user_uuid: create(:user, uuid: SecureRandom.uuid).uuid,
-                                             form_id: '686C-674')
+                                            form_id: '686C-674')
         in_progress_form_1 = create_in_progress_form_days_ago(7, user_uuid: user.uuid, form_id: '686C-674')
         create_in_progress_form_days_ago(8, user_uuid: create(:user, uuid: SecureRandom.uuid).uuid,
-                                             form_id: '686C-674')
+                                            form_id: '686C-674')
 
         subject = described_class.new
 
