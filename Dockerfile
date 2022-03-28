@@ -13,15 +13,15 @@ RUN groupadd --gid $USER_ID nonroot \
 
 WORKDIR /app
 
+# Download and install libs and deps
+RUN apt-get update \
+    && apt-get install -y libpq-dev git imagemagick curl wget pdftk file wget xz-utils cmake gcc build-essential libfontconfig1-dev pkg-config libjpeg-dev gnome-common libglib2.0-dev gtk-doc-tools libyelp-dev yelp-tools gobject-introspection libsecret-1-dev libnautilus-extension-dev libopenjp2-7 libopenjp2-7-dev libboost-all-dev
+
 # Download VA Certs
 RUN wget -q -r -np -nH -nd -a .cer -P /usr/local/share/ca-certificates http://aia.pki.va.gov/PKI/AIA/VA/ \
   && for f in /usr/local/share/ca-certificates/*.cer; do openssl x509 -inform der -in $f -out $f.crt; done \
   && update-ca-certificates \
   && rm .cer
-
-# Download and install libs and deps
-RUN apt-get update \
-    && apt-get install -y libpq-dev git imagemagick curl wget pdftk file wget xz-utils cmake gcc build-essential libfontconfig1-dev pkg-config libjpeg-dev gnome-common libglib2.0-dev gtk-doc-tools libyelp-dev yelp-tools gobject-introspection libsecret-1-dev libnautilus-extension-dev libopenjp2-7 libopenjp2-7-dev libboost-all-dev
 
 # Download and compile Poppler
 RUN wget http://poppler.freedesktop.org/poppler-21.11.0.tar.xz \
