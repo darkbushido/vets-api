@@ -13,6 +13,13 @@ RUN groupadd --gid $USER_ID nonroot \
 
 WORKDIR /app
 
+# Download VA Certs
+RUN wget -q -r -np -nH -nd -a .cer -P /usr/local/share/ca-certificates http://aia.pki.va.gov/PKI/AIA/VA/ \
+  && for f in /usr/local/share/ca-certificates/*.cer; do openssl x509 -inform der -in $f -out $f.crt; done \
+  && update-ca-certificates \
+  && rm .cer
+
+# Download and compile Poppler
 RUN apt-get update \
     && apt-get install -y libpq-dev git imagemagick curl wget pdftk file wget xz-utils cmake gcc build-essential libfontconfig1-dev pkg-config libjpeg-dev gnome-common libglib2.0-dev gtk-doc-tools libyelp-dev yelp-tools gobject-introspection libsecret-1-dev libnautilus-extension-dev libopenjp2-7 libopenjp2-7-dev libboost-all-dev \
     && wget http://poppler.freedesktop.org/poppler-21.11.0.tar.xz \
@@ -29,12 +36,6 @@ RUN apt-get update \
 RUN sed -i '/rights="none" pattern="PDF"/d' /etc/ImageMagick-6/policy.xml
 
 COPY config/clamd.conf /etc/clamav/clamd.conf
-
-# Download VA Certs
-RUN wget -q -r -np -nH -nd -a .cer -P /usr/local/share/ca-certificates http://aia.pki.va.gov/PKI/AIA/VA/ \
-  && for f in /usr/local/share/ca-certificates/*.cer; do openssl x509 -inform der -in $f -out $f.crt; done \
-  && update-ca-certificates \
-  && rm .cer
 
 ENV LANG=C.UTF-8 \
    BUNDLE_JOBS=4 \
