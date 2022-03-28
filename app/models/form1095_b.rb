@@ -1,16 +1,19 @@
 # frozen_string_literal: true
 
 class Form1095B < ApplicationRecord
-  validates :veteran_icn, :first_name, :last_name, :address, :tax_year, :city, presence: true
+  has_kms_key
+  encrypts :form_data, key: :kms_key, **lockbox_options
+
+  validates :veteran_icn, :tax_year,  presence: true
   validates :veteran_icn, uniqueness: { scope: :tax_year }
-  validates :ssn, presence: true, unless: -> { birth_date.present? }, format: /\A\d{9}\z|\A\d{4}\z/
-  validates :birth_date, presence: true, unless: -> { ssn.present? }
-  validates :coverage_months, length: { is: 13 }
-  validates :zip_code, presence: true, unless: -> { foreign_zip.present? }, format: /\A\d{5}\z|\A\d{5}-\d{4}\z/
-  validates :state, presence: true, unless: -> { province.present? }
+  # validates :ssn, presence: true, unless: -> { birth_date.present? }, format: /\A\d{9}\z|\A\d{4}\z/
+  # validates :birth_date, presence: true, unless: -> { ssn.present? }
+  # validates :coverage_months, length: { is: 13 }
+  # validates :zip_code, presence: true, unless: -> { foreign_zip.present? }, format: /\A\d{5}\z|\A\d{5}-\d{4}\z/
+  # validates :state, presence: true, unless: -> { province.present? }
 
   # assumes ssn is already last 4 if only 4 digits are provided
-  before_save :store_last_4, if: -> { ssn.size == 9 }
+  # before_save :store_last_4, if: -> { ssn.size == 9 }
 
   # scopes
   scope :get_available_forms, ->(icn) { where(veteran_icn: icn).distinct.pluck(:tax_year, :updated_at) }
