@@ -10,7 +10,8 @@ module ClaimsApi
     sidekiq_options retry: true, unique_until: :success
 
     def perform(uuid)
-      claim_object = ClaimsApi::SupportingDocument.find_by(id: uuid) || ClaimsApi::AutoEstablishedClaim.find_by(id: uuid)
+      claim_object = ClaimsApi::SupportingDocument.find_by(id: uuid) ||
+                     ClaimsApi::AutoEstablishedClaim.find_by(id: uuid)
       upload_object = claim_upload_document(claim_object)
       auto_claim = claim_object.try(:auto_established_claim) || upload_object
       if auto_claim.evss_id.nil?
