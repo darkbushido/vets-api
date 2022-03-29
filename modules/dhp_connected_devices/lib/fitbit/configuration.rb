@@ -7,7 +7,7 @@ module DhpConnectedDevices
   module Fitbit
     class Configuration < Common::Client::Configuration::REST
       def base_path
-        Settings.dhp.fitbit.token_uri
+        'https://api.fitbit.com/oauth2/token'
       end
 
       def service_name

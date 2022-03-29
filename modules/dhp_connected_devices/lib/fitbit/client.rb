@@ -15,10 +15,11 @@ module DhpConnectedDevices
       # @return [Faraday::Response]
       #
       def get_token(auth_code)
-        connection.post(Settings.dhp.fitbit.token_uri) do |req|
+        connection.post(config.base_path) do |req|
           req.headers = headers
           req.body = "client_id=#{Settings.dhp.fitbit.client_id}" \
-                     "&code=#{auth_code}&code_verifier=#{CODE_VERIFIER}" \
+                     "&code=#{auth_code}" \
+                     "&code_verifier=#{CODE_VERIFIER}" \
                      '&grant_type=authorization_code' \
                      "&redirect_uri=#{Settings.dhp.fitbit.redirect_uri}"
         end
