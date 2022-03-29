@@ -38,7 +38,7 @@ module ClaimsApi
         upload_document.tracked_item_id = claim_document.tracked_item_id
       else # then it's a ClaimsApi::AutoEstablishedClaim
         upload_document.evss_claim_id = claim_document.evss_id
-        upload_document.tracked_item_id = nil
+        upload_document.tracked_item_id = claim_document.id
       end
 
       upload_document
