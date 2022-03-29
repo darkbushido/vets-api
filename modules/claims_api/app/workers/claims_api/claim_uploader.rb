@@ -10,15 +10,15 @@ module ClaimsApi
     sidekiq_options retry: true, unique_until: :success
 
     def perform(uuid)
-      claim_document = ClaimsApi::SupportingDocument.find_by(id: uuid) || ClaimsApi::AutoEstablishedClaim.find_by(id: uuid)
-      upload_object = claim_upload_document(claim_document)
+      claim_doc = ClaimsApi::SupportingDocument.find_by(id: uuid) || ClaimsApi::AutoEstablishedClaim.find_by(id: uuid)
+      upload_object = claim_upload_document(claim_doc)
       auto_claim = object.try(:auto_established_claim) || upload_object
       if auto_claim.evss_id.nil?
         self.class.perform_in(30.minutes, uuid)
       else
         auth_headers = auto_claim.auth_headers
-        uploader = claim_document.uploader
-        uploader.retrieve_from_store!(claim_document.file_data['filename'])
+        uploader = claim_doc.uploader
+        uploader.retrieve_from_store!(claim_doc.file_data['filename'])
         file_body = uploader.read
         service(auth_headers).upload(file_body, upload_object)
       end
@@ -28,16 +28,15 @@ module ClaimsApi
 
     def claim_upload_document(claim_document)
       upload_document = OpenStruct.new(
-        file_name: claim_document.file_name
-        document_type: claim_document.document_type
+        file_name: claim_document.file_name,
+        document_type: claim_document.document_type,
         description: claim_document.description
       )
-      is_supporting_doc = claim_document.is_a? ClaimsApi::SupportingDocument) ? claim_document.evss_claim_id : claim_document.evss_id
 
-      if is_supporting_doc?
+      if claim_document.is_a? ClaimsApi::SupportingDocument
         upload_document.evss_claim_id = claim_document.evss_claim_id
         upload_document.tracked_item_id = claim_document.tracked_item_id
-      else
+      else # then it's a ClaimsApi::AutoEstablishedClaim
         upload_document.evss_claim_id = claim_document.evss_id
         upload_document.tracked_item_id = nil
       end
