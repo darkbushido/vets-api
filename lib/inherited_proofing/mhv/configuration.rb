@@ -31,8 +31,8 @@ module InheritedProofing
           headers: base_request_headers,
           request: request_options
         ) do |conn|
-          conn.response :betamocks if Settings.mhv.inherited_proofing.mock
           conn.use :breakers
+          conn.response :betamocks if Settings.mhv.inherited_proofing.mock
           conn.use Faraday::Response::RaiseError
           conn.response :snakecase
           conn.response :json, content_type: /\bjson$/
