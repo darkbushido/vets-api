@@ -93,7 +93,7 @@ module RapidReadyForDecision
     def add_medications_list
       @pdf.text "\n", size: 12
 
-      template = File.read('app/services/rapid_ready_for_decision/views/hypertension/medications.erb')
+      template = File.read('app/services/rapid_ready_for_decision/views/shared/medications.erb')
       @pdf.markup ERB.new(template).result(binding)
     end
 
