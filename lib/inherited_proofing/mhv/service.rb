@@ -29,13 +29,15 @@ module InheritedProofing
         end
 
         def correlation_id_api_request(icn)
-          perform(:get, correlation_id_url(icn), nil, headers)
+          response = perform(:get, correlation_id_url(icn), nil, headers)
+          JSON.parse(response.body)
         rescue Common::Client::Errors::ClientError
           {}
         end
 
         def verification_info_api_request(correlation_id)
-          perform(:get, verification_info_url(correlation_id), nil, headers)
+          response = perform(:get, verification_info_url(correlation_id), nil, headers)
+          JSON.parse(response.body)
         rescue Common::Client::Errors::ClientError
           {}
         end

@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'inherited_proofing/mhv/service'
+
 module InheritedProofing
   module MHV
     class InheritedProofingVerifier

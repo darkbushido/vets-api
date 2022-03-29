@@ -427,7 +427,7 @@ mhv:
   account:
     mock: false
   inherited_proofing:
-    base_path: https://somethingfake.com
+    base_path: https://mhv-api.example.com
     app_token: fake-app-token
     mock: true
 
