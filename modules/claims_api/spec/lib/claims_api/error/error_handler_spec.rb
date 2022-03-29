@@ -54,8 +54,10 @@ describe ApplicationController, type: :request do
 
   it 'catches an expired token' do
     with_okta_user(scopes) do |auth_header|
+      # allow(JWT).to receive(:decode).and_raise(JWT::ExpiredSignature)
       i = 0
       allow(JWT).to receive(:decode) do
+        # raise JWT::ExpiredSignature
         raise(JWT::ExpiredSignature) if i > 2
 
         i += 1
