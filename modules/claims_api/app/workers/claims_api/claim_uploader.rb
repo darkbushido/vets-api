@@ -10,15 +10,15 @@ module ClaimsApi
     sidekiq_options retry: true, unique_until: :success
 
     def perform(uuid)
-      claim_doc = ClaimsApi::SupportingDocument.find_by(id: uuid) || ClaimsApi::AutoEstablishedClaim.find_by(id: uuid)
-      upload_object = claim_upload_document(claim_doc)
-      auto_claim = object.try(:auto_established_claim) || upload_object
+      claim_object = ClaimsApi::SupportingDocument.find_by(id: uuid) || ClaimsApi::AutoEstablishedClaim.find_by(id: uuid)
+      upload_object = claim_upload_document(claim_object)
+      auto_claim = claim_object.try(:auto_established_claim) || upload_object
       if auto_claim.evss_id.nil?
         self.class.perform_in(30.minutes, uuid)
       else
         auth_headers = auto_claim.auth_headers
-        uploader = claim_doc.uploader
-        uploader.retrieve_from_store!(claim_doc.file_data['filename'])
+        uploader = claim_object.uploader
+        uploader.retrieve_from_store!(claim_object.file_data['filename'])
         file_body = uploader.read
         service(auth_headers).upload(file_body, upload_object)
       end
