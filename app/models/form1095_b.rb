@@ -4,21 +4,15 @@ class Form1095B < ApplicationRecord
   has_kms_key
   encrypts :form_data, key: :kms_key, **lockbox_options
 
+  # validations
   validates :veteran_icn, :tax_year,  presence: true
   validates :veteran_icn, uniqueness: { scope: :tax_year }
-  # validates :ssn, presence: true, unless: -> { birth_date.present? }, format: /\A\d{9}\z|\A\d{4}\z/
-  # validates :birth_date, presence: true, unless: -> { ssn.present? }
-  # validates :coverage_months, length: { is: 13 }
-  # validates :zip_code, presence: true, unless: -> { foreign_zip.present? }, format: /\A\d{5}\z|\A\d{5}-\d{4}\z/
-  # validates :state, presence: true, unless: -> { province.present? }
-
-  # assumes ssn is already last 4 if only 4 digits are provided
-  # before_save :store_last_4, if: -> { ssn.size == 9 }
+  validate :proper_form_data_schema
 
   # scopes
   scope :get_available_forms, ->(icn) { where(veteran_icn: icn).distinct.pluck(:tax_year, :updated_at) }
 
-  # calls pdf generator function
+  # methods
   def get_pdf
     generate_pdf
   end
@@ -29,58 +23,55 @@ class Form1095B < ApplicationRecord
   def generate_pdf
     pdf = PdfForms.new(Settings.binaries.pdftk)
 
-    temp_location = "lib/pdf_fill/temp/1095B-#{SecureRandom.hex}.pdf"
-    template_file = "lib/pdf_fill/forms/pdfs/f1095bs/1095b-#{tax_year}.pdf"
+    temp_file = Tempfile.new("1095B-#{SecureRandom.hex}.pdf")
+    pdf_template = "lib/pdf_fill/forms/pdfs/f1095bs/1095b-#{tax_year}.pdf"
 
-    unless File.exist?(template_file)
+    unless File.exist?(pdf_template)
       Rails.logger.error "1095-B template for year #{tax_year} does not exist."
       raise "1095-B for tax year #{tax_year} not supported"
     end
 
     pdf.fill_form(
-      template_file,
-      temp_location,
+      pdf_template,
+      temp_file,
       {
-        "topmostSubform[0].Page1[0].Pg1Header[0].cb_1[1]": is_corrected && 2,
-        "topmostSubform[0].Page1[0].Part1Contents[0].Line1[0].f1_01[0]": first_name,
-        "topmostSubform[0].Page1[0].Part1Contents[0].Line1[0].f1_02[0]": middle_name,
-        "topmostSubform[0].Page1[0].Part1Contents[0].Line1[0].f1_03[0]": last_name,
-        "topmostSubform[0].Page1[0].Part1Contents[0].f1_04[0]": ssn || '',
-        "topmostSubform[0].Page1[0].Part1Contents[0].f1_05[0]": ssn ? '' : birth_date,
-        "topmostSubform[0].Page1[0].Part1Contents[0].f1_06[0]": address,
-        "topmostSubform[0].Page1[0].Part1Contents[0].f1_07[0]": city,
-        "topmostSubform[0].Page1[0].Part1Contents[0].f1_08[0]": state || province,
-        "topmostSubform[0].Page1[0].Part1Contents[0].f1_09[0]": "#{country} #{zip_code || foreign_zip}",
-        "topmostSubform[0].Page1[0].Table1_Part4[0].Row23[0].f1_25[0]": first_name,
-        "topmostSubform[0].Page1[0].Table1_Part4[0].Row23[0].f1_26[0]": middle_name ? middle_name[0] : '',
-        "topmostSubform[0].Page1[0].Table1_Part4[0].Row23[0].f1_27[0]": last_name,
-        "topmostSubform[0].Page1[0].Table1_Part4[0].Row23[0].f1_28[0]": ssn || '',
-        "topmostSubform[0].Page1[0].Table1_Part4[0].Row23[0].f1_29[0]": ssn ? '' : birth_date,
-        "topmostSubform[0].Page1[0].Table1_Part4[0].Row23[0].c1_01[0]": coverage_months[0] && 1,
-        "topmostSubform[0].Page1[0].Table1_Part4[0].Row23[0].c1_02[0]": coverage_months[1] && 1,
-        "topmostSubform[0].Page1[0].Table1_Part4[0].Row23[0].c1_03[0]": coverage_months[2] && 1,
-        "topmostSubform[0].Page1[0].Table1_Part4[0].Row23[0].c1_04[0]": coverage_months[3] && 1,
-        "topmostSubform[0].Page1[0].Table1_Part4[0].Row23[0].c1_05[0]": coverage_months[4] && 1,
-        "topmostSubform[0].Page1[0].Table1_Part4[0].Row23[0].c1_06[0]": coverage_months[5] && 1,
-        "topmostSubform[0].Page1[0].Table1_Part4[0].Row23[0].c1_07[0]": coverage_months[6] && 1,
-        "topmostSubform[0].Page1[0].Table1_Part4[0].Row23[0].c1_08[0]": coverage_months[7] && 1,
-        "topmostSubform[0].Page1[0].Table1_Part4[0].Row23[0].c1_09[0]": coverage_months[8] && 1,
-        "topmostSubform[0].Page1[0].Table1_Part4[0].Row23[0].c1_10[0]": coverage_months[9] && 1,
-        "topmostSubform[0].Page1[0].Table1_Part4[0].Row23[0].c1_11[0]": coverage_months[10] && 1,
-        "topmostSubform[0].Page1[0].Table1_Part4[0].Row23[0].c1_12[0]": coverage_months[11] && 1,
-        "topmostSubform[0].Page1[0].Table1_Part4[0].Row23[0].c1_13[0]": coverage_months[12] && 1
+        "topmostSubform[0].Page1[0].Pg1Header[0].cb_1[1]": data["is_corrected"] && 2,
+        "topmostSubform[0].Page1[0].Part1Contents[0].Line1[0].f1_01[0]": data["first_name"],
+        "topmostSubform[0].Page1[0].Part1Contents[0].Line1[0].f1_02[0]": data["middle_name"],
+        "topmostSubform[0].Page1[0].Part1Contents[0].Line1[0].f1_03[0]": data["last_name"],
+        "topmostSubform[0].Page1[0].Part1Contents[0].f1_04[0]": data["ssn"] || '',
+        "topmostSubform[0].Page1[0].Part1Contents[0].f1_05[0]": data["ssn"] ? '' : data["birth_date"],
+        "topmostSubform[0].Page1[0].Part1Contents[0].f1_06[0]": data["address"],
+        "topmostSubform[0].Page1[0].Part1Contents[0].f1_07[0]": data["city"],
+        "topmostSubform[0].Page1[0].Part1Contents[0].f1_08[0]": data["state"] || data["province"],
+        "topmostSubform[0].Page1[0].Part1Contents[0].f1_09[0]": "#{data["country"]} #{data["zip_code"] || data["foreign_zip"]}",
+        "topmostSubform[0].Page1[0].Table1_Part4[0].Row23[0].f1_25[0]": data["first_name"],
+        "topmostSubform[0].Page1[0].Table1_Part4[0].Row23[0].f1_26[0]": data["middle_name"] ? data["middle_name"][0] : '',
+        "topmostSubform[0].Page1[0].Table1_Part4[0].Row23[0].f1_27[0]": data["last_name"],
+        "topmostSubform[0].Page1[0].Table1_Part4[0].Row23[0].f1_28[0]": data["ssn"] || '',
+        "topmostSubform[0].Page1[0].Table1_Part4[0].Row23[0].f1_29[0]": data["ssn"] ? '' : data["birth_date"],
+        "topmostSubform[0].Page1[0].Table1_Part4[0].Row23[0].c1_01[0]": data["coverage_months"][0] && 1,
+        "topmostSubform[0].Page1[0].Table1_Part4[0].Row23[0].c1_02[0]": data["coverage_months"][1] && 1,
+        "topmostSubform[0].Page1[0].Table1_Part4[0].Row23[0].c1_03[0]": data["coverage_months"][2] && 1,
+        "topmostSubform[0].Page1[0].Table1_Part4[0].Row23[0].c1_04[0]": data["coverage_months"][3] && 1,
+        "topmostSubform[0].Page1[0].Table1_Part4[0].Row23[0].c1_05[0]": data["coverage_months"][4] && 1,
+        "topmostSubform[0].Page1[0].Table1_Part4[0].Row23[0].c1_06[0]": data["coverage_months"][5] && 1,
+        "topmostSubform[0].Page1[0].Table1_Part4[0].Row23[0].c1_07[0]": data["coverage_months"][6] && 1,
+        "topmostSubform[0].Page1[0].Table1_Part4[0].Row23[0].c1_08[0]": data["coverage_months"][7] && 1,
+        "topmostSubform[0].Page1[0].Table1_Part4[0].Row23[0].c1_09[0]": data["coverage_months"][8] && 1,
+        "topmostSubform[0].Page1[0].Table1_Part4[0].Row23[0].c1_10[0]": data["coverage_months"][9] && 1,
+        "topmostSubform[0].Page1[0].Table1_Part4[0].Row23[0].c1_11[0]": data["coverage_months"][10] && 1,
+        "topmostSubform[0].Page1[0].Table1_Part4[0].Row23[0].c1_12[0]": data["coverage_months"][11] && 1,
+        "topmostSubform[0].Page1[0].Table1_Part4[0].Row23[0].c1_13[0]": data["coverage_months"][12] && 1
       },
       flatten: true
     )
-    # TODO: try to return PDF without saving the file first
+    pdf = temp_file.read
+    
+    temp_file.close
+    temp_file.unlink
 
-    file_contents = File.read(temp_location)
-
-    File.delete(temp_location)
-
-    file_contents
-
-    # send_data file_contents, filename: file_name, type: 'application/pdf', disposition: 'attachment'
+    pdf
   rescue PdfForms::PdftkError => e
     # in case theres other errors generating the PDF
     Rails.logger.error e
@@ -88,7 +79,47 @@ class Form1095B < ApplicationRecord
   end
   # rubocop:enable Metrics/MethodLength
 
-  def store_last_4
-    self.ssn = ssn[-4..]
+  def data
+    @data ||= JSON.parse(form_data)
+  end
+
+  def proper_form_data_schema
+    schema = {
+      "type": "object",
+      "required": ["first_name", "last_name", "address", "city", "coverage_months", "country"],
+      "properties": {
+        "first_name": { "type": "string" },
+        "middle_name": { "type": "string" },
+        "last_name": { "type": "string" },
+        "ssn": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 4
+        },
+        "birth_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "address": { "type": "string" },
+        "city": { "type": "string" },
+        "state": { "type": "string" },
+        "province": { "type": "string" },
+        "country": { "type": "string" },
+        "zip_code": { "type": "string" },
+        "foreign_zip": { "type": "string" },
+        "coverage_months": {
+          "type": "array",
+          "items": { "type": "boolean" },
+          "minItems": 13,
+          "maxItems": 13
+        }
+      }
+    }
+
+    begin
+      JSON::Validator.validate!(schema, form_data)
+    rescue JSON::Schema::ValidationError => e
+      errors.add(:form_data, e)
+    end
   end
 end
