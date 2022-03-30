@@ -8,6 +8,8 @@ require 'common/client/errors'
 RSpec.describe 'user', type: :request do
   include JsonSchemaMatchers
 
+  let(:attributes) { response.parsed_body.dig('data', 'attributes') }
+
   describe 'GET /mobile/v0/user' do
     before { iam_sign_in }
 
@@ -26,8 +28,6 @@ RSpec.describe 'user', type: :request do
           end
         end
       end
-
-      let(:attributes) { response.parsed_body.dig('data', 'attributes') }
 
       it 'returns an ok response' do
         expect(response).to have_http_status(:ok)
@@ -160,6 +160,7 @@ RSpec.describe 'user', type: :request do
             militaryServiceHistory
             paymentHistory
             userProfileUpdate
+            scheduleAppointments
             directDepositBenefitsUpdate
           ]
         )
@@ -178,6 +179,7 @@ RSpec.describe 'user', type: :request do
             paymentHistory
             userProfileUpdate
             secureMessaging
+            scheduleAppointments
           ]
         )
       end
@@ -264,6 +266,7 @@ RSpec.describe 'user', type: :request do
               militaryServiceHistory
               paymentHistory
               userProfileUpdate
+              scheduleAppointments
             ]
           )
         end
@@ -288,6 +291,73 @@ RSpec.describe 'user', type: :request do
               userProfileUpdate
             ]
           )
+        end
+      end
+
+      context 'with a user who does not have access to schedule appointments' do
+        context 'due to not having any registered faclities' do
+          let(:user_request) do
+            iam_sign_in(FactoryBot.build(:iam_user, :no_vha_facilities))
+            VCR.use_cassette('payment_information/payment_information') do
+              VCR.use_cassette('user/get_facilities_no_ids', match_requests_on: %i[method uri]) do
+                get '/mobile/v0/user', headers: iam_headers
+              end
+            end
+          end
+
+          it 'authorized services does not include scheduleAppointments' do
+            user_request
+            expect(attributes['authorizedServices']).not_to include('scheduleAppointments')
+          end
+
+          it 'increments statsd' do
+            expect do
+              user_request
+            end.to trigger_statsd_increment('mobile.schedule_appointment.policy.failure', times: 1)
+          end
+        end
+
+        context 'due to not being LOA3' do
+          let(:user_request) do
+            iam_sign_in(FactoryBot.build(:iam_user, :loa2))
+            VCR.use_cassette('payment_information/payment_information') do
+              VCR.use_cassette('user/get_facilities_no_ids', match_requests_on: %i[method uri]) do
+                get '/mobile/v0/user', headers: iam_headers
+              end
+            end
+          end
+
+          it 'authorized services does not include scheduleAppointments' do
+            user_request
+            expect(attributes['authorizedServices']).not_to include('scheduleAppointments')
+          end
+
+          it 'increments statsd' do
+            expect do
+              user_request
+            end.to trigger_statsd_increment('mobile.schedule_appointment.policy.failure', times: 1)
+          end
+        end
+      end
+
+      context 'with a user who does have access to schedule appointments' do
+        let(:user_request) do
+          VCR.use_cassette('payment_information/payment_information') do
+            VCR.use_cassette('user/get_facilities', match_requests_on: %i[method uri]) do
+              get '/mobile/v0/user', headers: iam_headers
+            end
+          end
+        end
+
+        it 'authorized services does include scheduleAppointments' do
+          user_request
+          expect(attributes['authorizedServices']).to include('scheduleAppointments')
+        end
+
+        it 'increments statsd' do
+          expect do
+            user_request
+          end.to trigger_statsd_increment('mobile.schedule_appointment.policy.success', times: 1)
         end
       end
     end
@@ -390,8 +460,6 @@ RSpec.describe 'user', type: :request do
         end
       end
 
-      let(:attributes) { response.parsed_body.dig('data', 'attributes') }
-
       it 'returns empty appropriate facilities list' do
         expect(attributes['health']).to include(
           {
@@ -423,8 +491,6 @@ RSpec.describe 'user', type: :request do
         end
       end
 
-      let(:attributes) { response.parsed_body.dig('data', 'attributes') }
-
       it 'returns an ok response' do
         expect(response).to have_http_status(:ok)
       end
@@ -449,7 +515,49 @@ RSpec.describe 'user', type: :request do
             militaryServiceHistory
             paymentHistory
             userProfileUpdate
+            scheduleAppointments
             directDepositBenefitsUpdate
+          ]
+        )
+      end
+    end
+
+    context 'when EVSS service fails' do
+      let(:user) { FactoryBot.build(:iam_user, :logingov) }
+
+      before do
+        iam_sign_in(user)
+      end
+
+      it 'does not include directDepositBenefitsUpdate in the authorized services' do
+        response_details = { 'messages' => 'something went wrong' }
+        allow_any_instance_of(PPIUPolicy).to receive(:access_update?).and_raise(
+          EVSS::ErrorMiddleware::EVSSError.new(
+            response_details['messages'], response_details['messages'], response_details
+          )
+        )
+        expect(Rails.logger).to receive(:error).with(
+          'Mobile user serializer error when fetching from EVSS', user_uuid: user.uuid, details: 'something went wrong'
+        )
+
+        VCR.use_cassette('payment_information/payment_information') do
+          VCR.use_cassette('user/get_facilities') do
+            get '/mobile/v0/user', headers: iam_headers
+          end
+        end
+
+        expect(attributes['authorizedServices']).to eq(
+          %w[
+            appeals
+            appointments
+            claims
+            directDepositBenefits
+            disabilityRating
+            lettersAndDocuments
+            militaryServiceHistory
+            paymentHistory
+            userProfileUpdate
+            scheduleAppointments
           ]
         )
       end

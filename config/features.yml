@@ -333,6 +333,10 @@ features:
     actor_type: user
     description: Enable/disable custom expiration dates for forms
     enable_in_development: true
+  in_progress_form_reminder:
+    actor_type: user
+    description: Enable/disable in progress form reminders (sent via VaNotify)
+    enable_in_development: true
   login_gov:
     actor_type: cookie_id
     description: Enables/disables the usage of the new service provider Login.gov (VSP Identity)
@@ -419,6 +423,9 @@ features:
     actor_type: user
     description: Show/hide the gender field UI on the profile page
     enable_in_development: true
+  profile_show_pronouns_and_sexual_orientation:
+    actor_type: user
+    description: Show/hide Pronouns and Sexual Orientation fields on profile page
   profile_show_receive_text_notifications:
     actor_type: user
     description: https://www.va.gov/profile/ show Receive Text Notifications
@@ -451,6 +458,9 @@ features:
     actor_type: user
     description: Toggles the availability of sharable links to deep link to content
     enable_in_development: true
+  shift_vets_banner:
+    actor_type: user
+    description: Shift veteran banner position on the home page
   show526_wizard:
     actor_type: user
     description: This determines when the wizard should show up on the form 526 intro page

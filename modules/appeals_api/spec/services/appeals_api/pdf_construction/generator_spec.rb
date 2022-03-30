@@ -5,6 +5,7 @@ require AppealsApi::Engine.root.join('spec', 'spec_helper.rb')
 
 describe AppealsApi::PdfConstruction::Generator do
   include FixtureHelpers
+  include SchemaHelpers
 
   let(:appeal) { create(:notice_of_disagreement) }
 
@@ -54,7 +55,6 @@ describe AppealsApi::PdfConstruction::Generator do
 
           it 'generates the expected pdf' do
             data = extra_nod_v2.form_data
-            data['data']['attributes']['extensionReason'] = 'W' * 2300
             extra_nod_v2.form_data = data
 
             generated_pdf = described_class.new(extra_nod_v2, version: 'V2').generate
@@ -71,6 +71,34 @@ describe AppealsApi::PdfConstruction::Generator do
             generated_pdf = described_class.new(minimal_nod_v2, version: 'V2').generate
             expected_pdf = fixture_filepath('expected_10182_minimal.pdf', version: 'v2')
             expect(generated_pdf).to match_pdf expected_pdf
+            File.delete(generated_pdf) if File.exist?(generated_pdf)
+          end
+        end
+
+        context 'pdf max length content verification' do
+          let(:schema) { read_schema('10182.json', 'v2') }
+          let(:nod) { build(:extra_notice_of_disagreement_v2, created_at: '2021-02-03T14:15:16Z') }
+          let(:data) { override_max_lengths(nod, schema) }
+
+          it 'generates the expected pdf' do
+            nod.form_data = data
+            # we tried to use JSON_SCHEMER, but it did not work with our headers, and chose not to invest more time atm.
+            nod.auth_headers['X-VA-SSN'] = 'W' * 9
+            nod.auth_headers['X-VA-First-Name'] = 'W' * 30
+            nod.auth_headers['X-VA-Middle-Initial'] = 'W' * 1
+            nod.auth_headers['X-VA-Last-Name'] = 'W' * 40
+            nod.auth_headers['X-VA-Claimant-First-Name'] = 'W' * 255
+            nod.auth_headers['X-VA-Claimant-Middle-Initial'] = 'W' * 1
+            nod.auth_headers['X-VA-Claimant-Last-Name'] = 'W' * 255
+            nod.auth_headers['X-VA-File-Number'] = 'W' * 9
+            nod.auth_headers['X-Consumer-Username'] = 'W' * 255
+            nod.auth_headers['X-Consumer-ID'] = 'W' * 255
+            nod.save!
+
+            generated_pdf = described_class.new(nod, version: 'v2').generate
+            expected_pdf = fixture_filepath('expected_10182_maxlength.pdf', version: 'v2')
+
+            expect(generated_pdf).to match_pdf(expected_pdf)
             File.delete(generated_pdf) if File.exist?(generated_pdf)
           end
         end
@@ -167,6 +195,42 @@ describe AppealsApi::PdfConstruction::Generator do
             File.delete(generated_pdf) if File.exist?(generated_pdf)
           end
         end
+
+        # rubocop:disable Layout/LineLength
+        context 'pdf max length content verification' do
+          let(:schema) { read_schema('200996.json', 'v2') }
+          let(:hlr) { build(:extra_higher_level_review_v2, created_at: '2021-02-03T14:15:16Z') }
+          let(:data) { override_max_lengths(hlr, schema) }
+
+          it 'generates the expected pdf' do
+            # phone strings are only allowed to be 20 char in length, so we are overriding it.
+            allow_any_instance_of(AppealsApi::PdfConstruction::HigherLevelReview::V2::FormData).to receive(:veteran_phone_string).and_return('+WWW-WWWWWWWWWWWWWWW')
+            allow_any_instance_of(AppealsApi::PdfConstruction::HigherLevelReview::V2::FormData).to receive(:claimant_phone_string).and_return('+WWW-WWWWWWWWWWWWWWW')
+
+            hlr.form_data = data
+            # we tried to use JSON_SCHEMER for headers, but it did not work with our headers, and chose not to invest more time atm.
+            hlr.auth_headers['X-VA-First-Name'] = 'W' * 30
+            hlr.auth_headers['X-VA-Middle-Initial'] = 'W' * 1
+            hlr.auth_headers['X-VA-Last-Name'] = 'W' * 40
+            hlr.auth_headers['X-VA-File-Number'] = 'W' * 9
+            hlr.auth_headers['X-VA-SSN'] = 'W' * 9
+            hlr.auth_headers['X-VA-Insurance-Policy-Number'] = 'W' * 18
+            hlr.auth_headers['X-VA-Claimant-SSN'] = 'W' * 9
+            hlr.auth_headers['X-VA-Claimant-First-Name'] = 'W' * 255
+            hlr.auth_headers['X-VA-Claimant-Middle-Initial'] = 'W' * 1
+            hlr.auth_headers['X-VA-Claimant-Last-Name'] = 'W' * 255
+            hlr.auth_headers['X-Consumer-Username'] = 'W' * 255
+            hlr.auth_headers['X-Consumer-ID'] = 'W' * 255
+            hlr.save!
+
+            generated_pdf = described_class.new(hlr, version: 'v2').generate
+            expected_pdf = fixture_filepath('expected_200996_maxlength.pdf', version: 'v2')
+
+            expect(generated_pdf).to match_pdf(expected_pdf)
+            File.delete(generated_pdf) if File.exist?(generated_pdf)
+          end
+        end
+        # rubocop:enable Layout/LineLength
       end
     end
 
@@ -188,6 +252,33 @@ describe AppealsApi::PdfConstruction::Generator do
         it 'generates the expected pdf' do
           generated_pdf = described_class.new(extra_supplemental_claim, version: 'V2').generate
           expected_pdf = fixture_filepath('expected_200995_extra.pdf', version: 'v2')
+          expect(generated_pdf).to match_pdf(expected_pdf)
+          File.delete(generated_pdf) if File.exist?(generated_pdf)
+        end
+      end
+
+      context 'pdf max length content verification' do
+        let(:schema) { read_schema('200995.json', 'v2') }
+        let(:sc) { build(:extra_supplemental_claim, created_at: '2021-02-03T14:15:16Z') }
+        let(:data) { override_max_lengths(sc, schema) }
+
+        it 'generates the expected pdf' do
+          sc.form_data = data
+          # we tried to use JSON_SCHEMER, but it did not work with our headers, and chose not to invest more time atm.
+          sc.auth_headers['X-VA-SSN'] = 'W' * 9
+          sc.auth_headers['X-VA-First-Name'] = 'W' * 30
+          sc.auth_headers['X-VA-Middle-Initial'] = 'W' * 1
+          sc.auth_headers['X-VA-Last-Name'] = 'W' * 40
+          sc.auth_headers['X-VA-File-Number'] = 'W' * 9
+          sc.auth_headers['X-VA-Service-Number'] = 'W' * 9
+          sc.auth_headers['X-VA-Insurance-Policy-Number'] = 'W' * 18
+          sc.auth_headers['X-Consumer-Username'] = 'W' * 255
+          sc.auth_headers['X-Consumer-ID'] = 'W' * 255
+          sc.save!
+
+          generated_pdf = described_class.new(sc, version: 'v2').generate
+          expected_pdf = fixture_filepath('expected_200995_maxlength.pdf', version: 'v2')
+
           expect(generated_pdf).to match_pdf(expected_pdf)
           File.delete(generated_pdf) if File.exist?(generated_pdf)
         end

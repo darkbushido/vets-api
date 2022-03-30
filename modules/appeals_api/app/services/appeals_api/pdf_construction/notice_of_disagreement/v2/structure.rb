@@ -14,6 +14,7 @@ module AppealsApi
           options = {
             form_fields.veteran_file_number => form_data.veteran.file_number,
             form_fields.veteran_dob => form_data.veteran.birth_date_string,
+            form_fields.claimant_dob => form_data.claimant.birth_date_string,
             form_fields.mailing_address => form_data.mailing_address,
             form_fields.homeless => form_data.veteran_homeless,
             form_fields.preferred_phone => form_data.preferred_phone,
@@ -57,7 +58,7 @@ module AppealsApi
             pdf.text_box(
               form_data.claimant.full_name,
               text_opts.merge(
-                at: [1, 603],
+                at: [1, 641],
                 width: 370, # So the width of the name & signature field match, for truncation consistency
                 height: 16
               )
@@ -75,9 +76,9 @@ module AppealsApi
             pdf.text_box(
               form_data.rep_name,
               text_opts.merge(
-                at: [350, 563],
-                width: 195,
-                height: 24
+                at: [348, 570],
+                width: 200,
+                height: 44
               )
             )
 
@@ -177,10 +178,12 @@ module AppealsApi
 
           options
         end
+        # rubocop:disable Layout/LineLength
 
         def additional_pages?
-          form_data.contestable_issues.count > 5 || form_data.long_preferred_email? || form_data.extension_request?
+          form_data.contestable_issues.count > 5 || form_data.long_preferred_email? || form_data.extension_request? || form_data.long_rep_name?
         end
+        # rubocop:enable Layout/LineLength
 
         # rubocop:disable Metrics/MethodLength
         def insert_issues_into_text_boxes(pdf, text_opts)

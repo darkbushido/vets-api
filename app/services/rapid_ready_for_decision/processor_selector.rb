@@ -6,27 +6,53 @@ module RapidReadyForDecision
       @form526_submission = form526_submission
     end
 
-    def processor_class
-      return nil unless rrd_enabled?
+    RrdConstants = RapidReadyForDecision::Constants
 
-      if rrd_enabled_disability?('hypertension') && single_issue_claim_applicable?(DiagnosticCodes::HYPERTENSION)
-        return RapidReadyForDecision::DisabilityCompensationJob
-      end
+    def processor_class(backup: false)
+      return unless rrd_enabled?
 
-      if rrd_enabled_disability?('asthma') && single_issue_claim_applicable?(DiagnosticCodes::ASTHMA)
-        return RapidReadyForDecision::Form526AsthmaJob
-      end
+      # single-issue claims only
+      return unless mapped_submission_disabilities.size == 1
 
-      nil
+      disability_symbol = mapped_submission_disabilities.first
+      # must be a disability supported by RRD
+      return unless disability_symbol
+
+      disability_struct = RrdConstants::DISABILITIES[disability_symbol]
+      # the RRD disability must be enabled
+      return unless rrd_enabled_disability?(disability_struct)
+
+      form_disability = form_disabilities.first
+      # the submitted disability must be for a claim for increase
+      return unless self.class.disability_increase?(form_disability, disability_struct)
+
+      return disability_struct[:backup_processor_class]&.constantize if backup
+
+      disability_struct[:processor_class]&.constantize
     end
 
     def rrd_applicable?
       !processor_class.nil?
     end
 
-    def self.disability_increase?(disability, diagnostic_code)
-      disability['diagnosticCode'] == diagnostic_code &&
-        disability['disabilityActionType']&.upcase == 'INCREASE'
+    def self.disability_increase?(form_disability, disability_struct)
+      form_disability['diagnosticCode'] == disability_struct[:code] &&
+        form_disability['disabilityActionType']&.upcase == 'INCREASE'
+    end
+
+    def send_rrd_alert(message)
+      body = <<~BODY
+        Environment: #{Settings.vsp_environment}<br/>
+        Form526Submission.id: #{@form526_submission.id}<br/>
+        <br/>
+        #{message}
+      BODY
+      ActionMailer::Base.mail(
+        from: ApplicationMailer.default[:from],
+        to: Settings.rrd.alerts.recipients,
+        subject: 'RRD Processor Selector alert',
+        body: body
+      ).deliver_now
     end
 
     private
@@ -37,19 +63,18 @@ module RapidReadyForDecision
     end
 
     # @return [Boolean] Is the specified disability RRD-enabled according to Flipper settings
-    def rrd_enabled_disability?(disability)
+    def rrd_enabled_disability?(disability_struct)
       # Todo later: Remove old RRD-related Flipper keys "disability_#{disability.downcase}_compensation_fast_track"
-      Flipper.enabled?("rrd_#{disability.downcase}_compensation".to_sym) ||
-        Flipper.enabled?("disability_#{disability.downcase}_compensation_fast_track".to_sym)
+      Flipper.enabled?("rrd_#{disability_struct[:flipper_name].downcase}_compensation".to_sym) ||
+        Flipper.enabled?("disability_#{disability_struct[:flipper_name].downcase}_compensation_fast_track".to_sym)
     end
 
     def form_disabilities
       @form_disabilities ||= @form526_submission.form.dig('form526', 'form526', 'disabilities')
     end
 
-    def single_issue_claim_applicable?(diagnostic_code)
-      form_disabilities.count == 1 &&
-        self.class.disability_increase?(form_disabilities.first, diagnostic_code)
+    def mapped_submission_disabilities
+      @mapped_submission_disabilities ||= RrdConstants.extract_disability_symbol_list(@form526_submission)
     end
   end
 end
