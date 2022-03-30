@@ -8,9 +8,10 @@ module ClaimsApi
       def self.included(clazz)
         clazz.class_eval do
           # rescue_from ::Common::Exceptions::TokenValidationError, with: :token_validation_error
-          rescue_from ::Common::Exceptions::TokenValidationError, with: lambda {
-                                                                          render_error(ClaimsApi::Error::TokenValidationError.new)
-                                                                        }
+          rescue_from ::Common::Exceptions::TokenValidationError,
+                      with: lambda {
+                        render_error(ClaimsApi::Error::TokenValidationError.new)
+                      }
         end
       end
 
