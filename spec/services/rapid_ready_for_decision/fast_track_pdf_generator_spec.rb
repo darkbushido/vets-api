@@ -5,11 +5,11 @@ require 'rails_helper'
 # require 'prawn/table'
 require 'lighthouse/veterans_health/client'
 
-RSpec.describe RapidReadyForDecision::HypertensionPdfGenerator, :vcr do
+RSpec.describe RapidReadyForDecision::FastTrackPdfGenerator, :vcr do
   subject { PDF::Inspector::Text.analyze(compiled_pdf.render).strings }
 
   if ENV['_SAVE_RRD_PDF_FILE']
-    after(:each) do |example|
+    after do |example|
       file_name = "tmp/rrd-pdf-preview-#{example.metadata[:description].parameterize}-#{Time.now.to_i}.pdf"
       compiled_pdf.render_file(file_name)
       puts "\n #{file_name}"
@@ -32,11 +32,11 @@ RSpec.describe RapidReadyForDecision::HypertensionPdfGenerator, :vcr do
     original_first_bp_reading = bp_data.body['entry'].first
     original_first_bp_reading['resource']['effectiveDateTime'] = (DateTime.now - 2.weeks).iso8601
 
-    RapidReadyForDecision::HypertensionObservationData.new(bp_data).transform
+    RapidReadyForDecision::LighthouseObservationData.new(bp_data).transform
   end
 
   let(:parsed_medications_data) do
-    RapidReadyForDecision::HypertensionMedicationRequestData.new(client.list_resource('medication_requests')).transform
+    RapidReadyForDecision::LighthouseMedicationRequestData.new(client.list_resource('medication_requests')).transform
   end
 
   let(:patient_name) do
@@ -44,7 +44,7 @@ RSpec.describe RapidReadyForDecision::HypertensionPdfGenerator, :vcr do
   end
 
   let(:pdf_generator) do
-    RapidReadyForDecision::HypertensionPdfGenerator.new(patient_name, parsed_bp_data, parsed_medications_data)
+    RapidReadyForDecision::FastTrackPdfGenerator.new(patient_name, parsed_bp_data, parsed_medications_data)
   end
 
   describe '#generate', :vcr do

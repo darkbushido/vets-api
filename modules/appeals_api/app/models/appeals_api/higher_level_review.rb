@@ -40,6 +40,8 @@ module AppealsApi
       :birth_date_is_a_date,
       :birth_date_is_in_the_past,
       :contestable_issue_dates_are_valid_dates,
+      :claimant_birth_date_is_in_the_past,
+      :required_claimant_data_is_present,
       if: proc { |a| a.form_data.present? }
     )
 
@@ -235,7 +237,7 @@ module AppealsApi
       current_status = self.status
       update_handler = Events::Handler.new(event_type: :hlr_status_updated, opts: {
                                              from: current_status,
-                                             to: status,
+                                             to: status.to_s,
                                              status_update_time: Time.zone.now.iso8601,
                                              statusable_id: id
                                            })
@@ -244,13 +246,15 @@ module AppealsApi
                                             email_identifier: email_identifier,
                                             first_name: first_name,
                                             date_submitted: veterans_local_time.iso8601,
-                                            guid: id
+                                            guid: id,
+                                            claimant_email: claimant.email,
+                                            claimant_first_name: claimant.first_name
                                           })
 
       update!(status: status, code: code, detail: detail)
 
       update_handler.handle! unless status == current_status
-      email_handler.handle! if status == 'submitted' && email_identifier.present?
+      email_handler.handle! if status == 'submitted' && (claimant.email.present? || email_identifier.present?)
     end
 
     def informal_conference_rep
@@ -271,7 +275,7 @@ module AppealsApi
         'veteranReadinessAndEmployment' => 'VRE',
         'loanGuaranty' => 'CMP',
         'education' => 'EDU',
-        'nationalCemeteryAdministration' => 'NCA'
+        'nationalCemeteryAdministration' => 'CMP'
       }[benefit_type]
     end
 
@@ -334,6 +338,34 @@ module AppealsApi
       add_error("Veteran birth date isn't in the past: #{birth_date}") unless self.class.past? birth_date
     end
 
+    # validation (header)
+    def claimant_birth_date_is_in_the_past
+      return if api_version.upcase == 'V1'
+      return if claimant.birth_date.blank?
+
+      unless self.class.past?(claimant.birth_date)
+        add_error("Claimant birth date isn't in the past: #{claimant.birth_date_string}")
+      end
+    end
+
+    # validation (header & body)
+    # Schemas take care of most of the requirements, but we need to check that both header & body data is provided
+    def required_claimant_data_is_present
+      return if api_version.upcase == 'V1'
+
+      # Claimant DOB is always required if they've supplied any claimant headers
+      has_claimant_headers = claimant.birth_date.present?
+      # form data that includes a claimant is also sufficient to know it's passed the schema
+      has_claimant_data = data_attributes&.fetch('claimant', nil).present?
+
+      return if !has_claimant_headers && !has_claimant_data # No claimant headers or data? not a problem!
+      return if has_claimant_headers && has_claimant_data # Has both claimant headers and data? A-ok!
+
+      add_error('Claimant data was provided but missing claimant headers') unless has_claimant_headers
+      add_error('Claimant headers were provided but missing claimant data') unless has_claimant_data
+    end
+
+    # validation (body)
     def contestable_issue_dates_are_valid_dates
       return if contestable_issues.blank?
 
