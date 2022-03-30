@@ -15,7 +15,12 @@ WORKDIR /app
 
 # Download and install libs and deps
 RUN apt-get update \
-    && apt-get install -y libpq-dev git imagemagick curl wget pdftk file wget xz-utils cmake gcc build-essential libfontconfig1-dev pkg-config libjpeg-dev gnome-common libglib2.0-dev gtk-doc-tools libyelp-dev yelp-tools gobject-introspection libsecret-1-dev libnautilus-extension-dev libopenjp2-7 libopenjp2-7-dev libboost-all-dev
+    && apt-get install -y libpq-dev git imagemagick curl wget pdftk file wget xz-utils cmake gcc build-essential \
+    libfontconfig1-dev pkg-config libjpeg-dev gnome-common libglib2.0-dev gtk-doc-tools libyelp-dev yelp-tools \
+    gobject-introspection libsecret-1-dev libnautilus-extension-dev libopenjp2-7 libopenjp2-7-dev libboost-all-dev \
+    libnss3 libnss3-dev libcairo2-dev libjpeg-dev libgif-dev e2fslibs-dev libboost-all-dev libaudit-dev \
+    && apt-get clean \
+    && rm -rf /var/cache/apt/archives/* /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Download VA Certs
 RUN wget -q -r -np -nH -nd -a .cer -P /usr/local/share/ca-certificates http://aia.pki.va.gov/PKI/AIA/VA/ \
@@ -28,11 +33,12 @@ RUN wget http://poppler.freedesktop.org/poppler-21.11.0.tar.xz \
     && unxz poppler-21.11.0.tar.xz \
     && tar xf poppler-21.11.0.tar \
     && cd poppler-21.11.0 \
-    && cmake   -DCMAKE_BUILD_TYPE=Release   \
-            -DENABLE_XPDF_HEADERS=ON \
-    && make install \
-    && apt-get clean \
-    && rm -rf /var/cache/apt/archives/* /var/lib/apt/lists/* /tmp/* /var/tmp/*
+    && cmake -DCMAKE_BUILD_TYPE=Release \
+             -DCMAKE_INSTALL_PREFIX=/usr \
+             -DTESTDATADIR=$PWD/testfiles \
+             -DENABLE_UNSTABLE_API_ABI_HEADERS=ON \
+             -DENABLE_XPDF_HEADERS=ON \
+    && make install
 
 # Relax ImageMagick PDF security. See https://stackoverflow.com/a/59193253.
 RUN sed -i '/rights="none" pattern="PDF"/d' /etc/ImageMagick-6/policy.xml
