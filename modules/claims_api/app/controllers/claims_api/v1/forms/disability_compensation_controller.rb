@@ -64,11 +64,15 @@ module ClaimsApi
         # Required if first ever claim for Veteran.
         #
         # @return [JSON] Claim record
-        def upload_form_526
+        def upload_form_526 # rubocop:disable Metrics/MethodLength
           validate_documents_content_type
           validate_documents_page_size
 
           pending_claim = ClaimsApi::AutoEstablishedClaim.pending?(params[:id])
+
+          ClaimsApi::Logger.log('526ez',
+                                claim_id: params[:id],
+                                pdf_gen_dis: pending_claim.form_data['autoCestPDFGenerationDisabled'])
 
           if pending_claim && (pending_claim.form_data['autoCestPDFGenerationDisabled'] == true)
             pending_claim.set_file_data!(documents.first, params[:doc_type])

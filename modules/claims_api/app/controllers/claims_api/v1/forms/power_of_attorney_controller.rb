@@ -46,6 +46,7 @@ module ClaimsApi
             end
 
             power_of_attorney.save!
+            ClaimsApi::Logger.log('poa', poa_id: power_of_attorney.id, status: 'created')
           end
 
           data = power_of_attorney.form_data
