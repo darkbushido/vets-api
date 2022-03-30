@@ -19,6 +19,14 @@ class Form1095B < ApplicationRecord
 
   private
 
+  def country_and_zip
+    "#{data['country']} #{data['zip_code'] || data['foreign_zip']}"
+  end
+
+  def middle_initial
+    data['middle_name'] ? data['middle_name'][0] : ''
+  end
+
   # rubocop:disable Metrics/MethodLength
   def generate_pdf
     pdf = PdfForms.new(Settings.binaries.pdftk)
@@ -44,9 +52,9 @@ class Form1095B < ApplicationRecord
         "topmostSubform[0].Page1[0].Part1Contents[0].f1_06[0]": data['address'],
         "topmostSubform[0].Page1[0].Part1Contents[0].f1_07[0]": data['city'],
         "topmostSubform[0].Page1[0].Part1Contents[0].f1_08[0]": data['state'] || data['province'],
-        "topmostSubform[0].Page1[0].Part1Contents[0].f1_09[0]": "#{data['country']} #{data['zip_code'] || data['foreign_zip']}",
+        "topmostSubform[0].Page1[0].Part1Contents[0].f1_09[0]": country_and_zip,
         "topmostSubform[0].Page1[0].Table1_Part4[0].Row23[0].f1_25[0]": data['first_name'],
-        "topmostSubform[0].Page1[0].Table1_Part4[0].Row23[0].f1_26[0]": data['middle_name'] ? data['middle_name'][0] : '',
+        "topmostSubform[0].Page1[0].Table1_Part4[0].Row23[0].f1_26[0]": middle_initial,
         "topmostSubform[0].Page1[0].Table1_Part4[0].Row23[0].f1_27[0]": data['last_name'],
         "topmostSubform[0].Page1[0].Table1_Part4[0].Row23[0].f1_28[0]": data['ssn'] || '',
         "topmostSubform[0].Page1[0].Table1_Part4[0].Row23[0].f1_29[0]": data['ssn'] ? '' : data['birth_date'],
@@ -67,7 +75,7 @@ class Form1095B < ApplicationRecord
       flatten: true
     )
     pdf = temp_file.read
-    
+
     temp_file.close
     temp_file.unlink
 
@@ -81,7 +89,7 @@ class Form1095B < ApplicationRecord
   def form_data_schema
     {
       "type": 'object',
-      "required": %w(first_name last_name address city coverage_months country),
+      "required": %w[first_name last_name address city coverage_months country],
       "properties": {
         "first_name": { "type": 'string' },
         "middle_name": { "type": 'string' },
@@ -118,10 +126,8 @@ class Form1095B < ApplicationRecord
   end
 
   def proper_form_data_schema
-    begin
-      JSON::Validator.validate!(form_data_schema, form_data)
-    rescue JSON::Schema::ValidationError => e
-      errors.add(:form_data, e)
-    end
+    JSON::Validator.validate!(form_data_schema, form_data)
+  rescue JSON::Schema::ValidationError => e
+    errors.add(:form_data, e)
   end
 end
