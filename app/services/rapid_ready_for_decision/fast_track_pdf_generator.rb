@@ -49,11 +49,11 @@ module RapidReadyForDecision
       @medications.any?
     end
 
-    def start_date
+    def blood_pressure_start_date
       (@date - 1.year).strftime('%m/%d/%Y')
     end
 
-    def end_date
+    def blood_pressure_end_date
       @date.strftime('%m/%d/%Y')
     end
 
