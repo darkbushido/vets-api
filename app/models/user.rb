@@ -38,6 +38,9 @@ class User < Common::RedisStore
   attribute :mhv_last_signed_in, Common::UTCTime # MHV audit logging
   attribute :account_uuid, String
   attribute :account_id, Integer
+  attribute :user_verification_id, Integer
+  attribute :user_account_uuid, Integer
+  attribute :inherited_proof_verified, Boolean
 
   delegate :email, to: :identity, allow_nil: true
   delegate :loa3?, to: :identity, allow_nil: true
@@ -56,6 +59,26 @@ class User < Common::RedisStore
 
   def account_id
     @account_id ||= account&.id
+  end
+
+  def user_verification
+    @user_verification ||= Login::UserVerifier.new(self).perform
+  end
+
+  def user_account
+    @user_account ||= user_verification.user_account
+  end
+
+  def user_verification_id
+    @user_verification_id ||= user_verification.id
+  end
+
+  def user_account_uuid
+    @user_account_uuid ||= user_account.id
+  end
+
+  def inherited_proof_verified
+    @inherited_proof_verified ||= InheritedProofVerifiedUserAccount.where(user_account: user_account).present?
   end
 
   def pciu_email

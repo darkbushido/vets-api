@@ -1048,4 +1048,43 @@ RSpec.describe User, type: :model do
       end
     end
   end
+
+  describe '#user_verification' do
+    let(:user) { described_class.new(build(:user)) }
+
+    it 'returns expected user_verification' do
+      user_verification = Login::UserVerifier.new(user).perform
+
+      expect(user.user_verification).to eq(user_verification)
+    end
+  end
+
+  describe '#user_account' do
+    let(:user) { described_class.new(build(:user)) }
+
+    it 'returns expected user_account' do
+      user_account = Login::UserVerifier.new(user).perform.user_account
+
+      expect(user.user_account).to eq(user_account)
+    end
+  end
+
+  describe '#inherited_proof_verified' do
+    let(:user) { described_class.new(build(:user, inherited_proof_verified: nil)) }
+    let(:user_account) { user.user_account }
+
+    context 'when Inherited Proof Verified User Account exists and matches current user_account' do
+      let!(:inherited_proof_verified) { create(:inherited_proof_verified_user_account, user_account: user_account) }
+
+      it 'returns true' do
+        expect(user.inherited_proof_verified).to be true
+      end
+    end
+
+    context 'when no Inherited Proof Verified User Account is found' do
+      it 'returns false' do
+        expect(user.inherited_proof_verified).to be false
+      end
+    end
+  end
 end

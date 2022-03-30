@@ -4,6 +4,7 @@ FactoryBot.define do
   factory :user, class: 'User' do
     uuid { 'b2fab2b5-6af0-45e1-a9e2-394347af91ef' }
     last_signed_in { Time.now.utc }
+    inherited_proof_verified { true }
     transient do
       authn_context { LOA::IDME_LOA1_VETS }
       email { 'abraham.lincoln@vets.gov' }
